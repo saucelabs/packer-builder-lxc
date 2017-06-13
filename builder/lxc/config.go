@@ -19,6 +19,7 @@ type Config struct {
 	CommandWrapper      string   `mapstructure:"command_wrapper"`
 	RawInitTimeout      string   `mapstructure:"init_timeout"`
 	CloneSource         string   `mapstructure:"clone_container"`
+	CleanupFirst        bool     `mapstructure:"cleanup_first"`
 	Name                string   `mapstructure:"template_name"`
 	Parameters          []string `mapstructure:"template_parameters"`
 	EnvVars             []string `mapstructure:"template_environment_vars"`
