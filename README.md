@@ -164,7 +164,7 @@ Creating and cloning a build:
 {
   "builders": [
     {
-      type": "lxc",
+      "type": "lxc",
       "target_runlevel": 2,
       "container_name": "base",
       "config_file": "lxc.config",
