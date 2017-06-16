@@ -41,22 +41,21 @@ If your containers do not get an ip address from dhcp you need to turn off check
 
 Building from source
 ====================
-Install golang-go:
-```bash
-sudo apt-get install golang-go
-```
+Install golang-go: https://golang.org/doc/install#install
+
+Building will require Go 1.6 (maybe 1.7?) or higher.
 
 Install dependencies:
 * [gox](https://github.com/mitchellh/gox)
 * [go-fs](https://github.com/mitchellh/go-fs)
 * [multistep](https://github.com/mitchellh/multistep)
-* [packer-guilder-lxc](https://github.com/ustream/packer-builder-lxc)
+* [this package!](https://github.com/JScott/packer-builder-lxc)
 
 ```bash
 go get github.com/mitchellh/gox
 go get github.com/mitchellh/go-fs
 go get github.com/mitchellh/multistep
-go get github.com/ustream/packer-builder-lxc
+go get github.com/JScott/packer-builder-lxc
 ```
 
 Remove a few vendors from Packer's new structure that will break packer-builder-lxc:
@@ -158,6 +157,48 @@ Building wheezy on wheezy:
 ```
 
 Note the differences in template parameters/envvars!
+
+Creating and cloning a build:
+
+```json
+{
+  "builders": [
+    {
+      type": "lxc",
+      "target_runlevel": 2,
+      "container_name": "base",
+      "config_file": "lxc.config",
+      "init_timeout": "120s",
+      "template_parameters": [
+        "-d",
+        "ubuntu",
+        "-r",
+        "trusty",
+        "-a",
+        "amd64"
+      ],
+      "template_name": "ubuntu",
+      "cleanup_first": true
+    }
+  ]
+}
+```
+
+```json
+{
+  "builders": [
+    {
+      "type": "lxc",
+      "target_runlevel": 2,
+      "container_name": "clone",
+      "config_file": "lxc.config",
+      "init_timeout": "360s",
+      "clone_container": "base",
+      "template_name": "none"
+    }
+  ]
+}
+```
 
 Vagrant publishing
 ==================
