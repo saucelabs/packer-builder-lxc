@@ -24,12 +24,12 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	lxc_dir := "/var/lib/lxc"
 	rootfs := filepath.Join(lxc_dir, name, "rootfs")
 
-	if config.PackerForce || config.CleanupFirst {
-		s.destroy(config.ContainerName, ui)
+	if config.PackerForce {
+		s.Cleanup(state)
 	}
 
 	commands := make([][]string, 3)
-	if config.CloneSource == "" {
+	if config.Preload == "" {
 		commands[0] = append(config.EnvVars, []string{"lxc-create", "-n", name, "-t", config.Name, "--"}...)
 		commands[0] = append(commands[0], config.Parameters...)
 	} else {
@@ -59,15 +59,10 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 
 func (s *stepLxcCreate) Cleanup(state multistep.StateBag) {
 	config := state.Get("config").(*Config)
-	if config.CleanupFirst {
-		return
-	}
-	s.destroy(config.ContainerName, state.Get("ui").(packer.Ui))
-}
+	ui := state.Get("ui").(packer.Ui)
 
-func (s *stepLxcCreate) destroy(name string, ui packer.Ui) {
 	command := []string{
-		"lxc-destroy", "-f", "-n", name,
+		"lxc-destroy", "-f", "-n", config.ContainerName,
 	}
 
 	ui.Say("Unregistering and deleting virtual machine...")
