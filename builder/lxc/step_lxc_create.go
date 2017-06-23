@@ -33,6 +33,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	createCommand = append(createCommand, config.Parameters...)
 	commands = append(commands, createCommand)
 	if len(config.Preload) != 0 {
+		commands = append(commands, []string{"lxc-wait", "-n", name, "-s", "RUNNING"})
 		// e.g. [{ "source": "/path/to/some/rootfs.tar.gz", "path": "/" }]
 		for _, preload := range config.Preload {
 			lxcInternalPath := filepath.Join(rootfs, preload["path"])
