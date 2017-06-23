@@ -33,8 +33,8 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	createCommand = append(createCommand, config.Parameters...)
 	commands = append(commands, createCommand)
 	if len(config.Preload) != 0 {
-		tmpPath := "/tmp/lxc-preload/"
-		commands = append(commands, []string{"mkdir", "-p", tmpPath + name})
+		tmpPath := "/tmp/lxc-preload/" + name
+		commands = append(commands, []string{"mkdir", "-p", tmpPath})
 		// e.g.
 		//   [{ "source": "/path/to/some/rootfs.tar.gz", "path": "/" }]
 		//   [{ "source": "/path/to/some/rootfs.tar.gz", "extract": "rootfs/tmp", "path": "/tmp" }]
@@ -48,7 +48,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 			commands = append(commands, []string{"tar", "-C", tmpPath, "-xzf", preload["source"]})
 			commands = append(commands, []string{"mv", tmpPath + tarRelativePath, lxcAbsolutePath})
 		}
-		commands = append(commands, []string{"rm", "-rf", tmpPath + name})
+		commands = append(commands, []string{"rm", "-rf", tmpPath})
 	}
 	// prevent tmp from being cleaned on boot, we put provisioning scripts there
 	// todo: wait for init to finish before moving on to provisioning instead of this
