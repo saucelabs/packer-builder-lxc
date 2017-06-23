@@ -40,14 +40,16 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		//   [{ "source": "/path/to/some/rootfs.tar.gz", "path": "/" }]
 		//   [{ "source": "/path/to/some/rootfs.tar.gz", "extract": "rootfs/tmp", "path": "/tmp" }]
 		for _, preload := range config.Preload {
-			lxcAbsolutePath := filepath.Join(rootfs, preload["path"])
-			commands = append(commands, []string{"mkdir", "-p", lxcAbsolutePath})
-			tarRelativePath := "*"
+			lxcPath := filepath.Join(rootfs, preload["path"])
+			commands = append(commands, []string{"mkdir", "-p", lxcPath})
+			tarPath := tmpPath + "/*"
 			if val, ok := preload["extract"]; ok {
-				tarRelativePath = val
+				tarPath = tmpPath + "/" + val
 			}
 			commands = append(commands, []string{"tar", "-C", tmpPath, "-xzf", preload["source"]})
-			commands = append(commands, []string{"mv", tmpPath + "/" + tarRelativePath, lxcAbsolutePath})
+			// commands = append(commands, []string{"mv", tmpPath + "/" + tarPath, lxcPath})
+			// find /tmp/jscott/rootfs/tmp/* -maxdepth 1 | xargs -I {} mv {} /tmp/jscott/tmp
+			commands = append(commands, []string{"find", tarPath, "-maxdepth", "1", "|", "xargs", "-I", "{}", "mv", "{}", lxcPath})
 		}
 		commands = append(commands, []string{"rm", "-rf", tmpPath})
 	}
