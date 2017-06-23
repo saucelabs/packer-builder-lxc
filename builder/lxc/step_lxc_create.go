@@ -36,7 +36,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		// e.g. [{ "source": "/path/to/some/rootfs.tar.gz", "path": "/" }]
 		for _, preload := range config.Preload {
 			lxcInternalPath := filepath.Join(rootfs, preload["path"])
-			commands = append(commands, []string{"tar", "-C", lxcInternalPath, "xf", preload["source"]})
+			commands = append(commands, []string{"tar", "-xzf", preload["source"], "-C", lxcInternalPath})
 		}
 	}
 	// prevent tmp from being cleaned on boot, we put provisioning scripts there
