@@ -28,17 +28,21 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		s.Cleanup(state)
 	}
 
-	commands := make([][]string, 3)
-	if config.Preload == "" {
-		commands[0] = append(config.EnvVars, []string{"lxc-create", "-n", name, "-t", config.Name, "--"}...)
-		commands[0] = append(commands[0], config.Parameters...)
-	} else {
-		commands[0] = []string{"lxc-clone", "--orig", config.CloneSource, "--new", name}
+	var commands [][]string
+	createCommand := append(config.EnvVars, []string{"lxc-create", "-n", name, "-t", config.Name, "--"}...)
+	createCommand = append(createCommand, config.Parameters...)
+	commands = append(commands, createCommand)
+	if len(config.Preload) != 0 {
+		// e.g. [{ "source": "/path/to/some/rootfs.tar.gz", "path": "/" }]
+		for _, preload := range config.Preload {
+			lxcInternalPath := filepath.Join(rootfs, preload["path"])
+			commands = append(commands, []string{"tar", "-C", lxcInternalPath, "xf", preload["source"]})
+		}
 	}
 	// prevent tmp from being cleaned on boot, we put provisioning scripts there
 	// todo: wait for init to finish before moving on to provisioning instead of this
-	commands[1] = []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")}
-	commands[2] = []string{"lxc-start", "-d", "--name", name}
+	commands = append(commands, []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")})
+	commands = append(commands, []string{"lxc-start", "-d", "--name", name})
 
 	ui.Say("Creating container...")
 	for _, command := range commands {
