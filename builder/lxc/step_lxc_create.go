@@ -33,16 +33,22 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	createCommand = append(createCommand, config.Parameters...)
 	commands = append(commands, createCommand)
 	if len(config.Preload) != 0 {
-		// e.g. [{ "source": "/path/to/some/rootfs.tar.gz", "extract": "rootfs", "path": "/" }]
+		tmpPath := "/tmp/lxc-preload/"
+		commands = append(commands, []string{"mkdir", "-p", tmpPath + name})
+		// e.g.
+		//   [{ "source": "/path/to/some/rootfs.tar.gz", "path": "/" }]
+		//   [{ "source": "/path/to/some/rootfs.tar.gz", "extract": "rootfs/tmp", "path": "/tmp" }]
 		for _, preload := range config.Preload {
-			lxcInternalPath := filepath.Join(rootfs, preload["path"])
-			commands = append(commands, []string{"mkdir", "-p", lxcInternalPath})
-			tarInternalPath := ""
+			lxcAbsolutePath := filepath.Join(rootfs, preload["path"])
+			commands = append(commands, []string{"mkdir", "-p", lxcAbsolutePath})
+			tarRelativePath := "*"
 			if val, ok := preload["extract"]; ok {
-				tarInternalPath = val
+				tarRelativePath = val
 			}
-			commands = append(commands, []string{"tar", "-C", lxcInternalPath, "-xzf", preload["source"], tarInternalPath})
+			commands = append(commands, []string{"tar", "-C", tmpPath, "-xzf", preload["source"]})
+			commands = append(commands, []string{"mv", tmpPath + tarRelativePath, lxcAbsolutePath})
 		}
+		commands = append(commands, []string{"rm", "-rf", tmpPath + name})
 	}
 	// prevent tmp from being cleaned on boot, we put provisioning scripts there
 	// todo: wait for init to finish before moving on to provisioning instead of this
