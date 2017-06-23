@@ -46,7 +46,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 				tarRelativePath = val
 			}
 			commands = append(commands, []string{"tar", "-C", tmpPath, "-xzf", preload["source"]})
-			commands = append(commands, []string{"mv", tmpPath + tarRelativePath, lxcAbsolutePath})
+			commands = append(commands, []string{"mv", tmpPath + "/" + tarRelativePath, lxcAbsolutePath})
 		}
 		commands = append(commands, []string{"rm", "-rf", tmpPath})
 	}
