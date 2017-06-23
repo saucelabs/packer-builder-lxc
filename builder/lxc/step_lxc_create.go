@@ -47,10 +47,8 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 				tarPath = tmpPath + "/" + val
 			}
 			commands = append(commands, []string{"tar", "-C", tmpPath, "-xzf", preload["source"]})
-			cpCommand := "cp -r " + tarPath + " " + lxcPath
-			commands = append(commands, []string{"/bin/sh", "-c", cpCommand})
-			// find /tmp/jscott/rootfs/tmp/* -maxdepth 1 | xargs -I {} mv {} /tmp/jscott/tmp
-			// commands = append(commands, []string{"find", tarPath, "-maxdepth", "1", "|", "xargs", "-I", "{}", "mv", "{}", lxcPath})
+			mvCommand := "mv " + tarPath + " " + lxcPath
+			commands = append(commands, []string{"/bin/sh", "-c", mvCommand})
 		}
 		commands = append(commands, []string{"rm", "-rf", tmpPath})
 	}
