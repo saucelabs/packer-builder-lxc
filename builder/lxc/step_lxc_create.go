@@ -34,6 +34,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	commands = append(commands, createCommand)
 	if len(config.Preload) != 0 {
 		tmpPath := "/tmp/lxc-preload/" + name
+		commands = append(commands, []string{"rm", "-rf", tmpPath})
 		commands = append(commands, []string{"mkdir", "-p", tmpPath})
 		// e.g.
 		//   [{ "source": "/path/to/some/rootfs.tar.gz", "path": "/" }]
