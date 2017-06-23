@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -33,11 +34,15 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	createCommand = append(createCommand, config.Parameters...)
 	commands = append(commands, createCommand)
 	if len(config.Preload) != 0 {
-		commands = append(commands, []string{"lxc-wait", "-n", name, "-s", "RUNNING"})
 		// e.g. [{ "source": "/path/to/some/rootfs.tar.gz", "path": "/" }]
 		for _, preload := range config.Preload {
 			lxcInternalPath := filepath.Join(rootfs, preload["path"])
-			commands = append(commands, []string{"tar", "-xzf", preload["source"], "-C", lxcInternalPath})
+			err := os.MkdirAll(lxcInternalPath, 0755)
+			if err == nil {
+				commands = append(commands, []string{"tar", "-xzf", preload["source"], "-C", lxcInternalPath})
+			} else {
+				log.Printf("Couldn't untar to: %s", lxcInternalPath)
+			}
 		}
 	}
 	// prevent tmp from being cleaned on boot, we put provisioning scripts there
