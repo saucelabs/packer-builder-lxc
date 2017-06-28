@@ -16,6 +16,7 @@ type Config struct {
 	ConfigFile          string   `mapstructure:"config_file"`
 	OutputDir           string   `mapstructure:"output_directory"`
 	ExportName					string   `mapstructure:"export_name"`
+	ExportFolders				[]string `mapstructure:"export_folders"`
 	ContainerName       string   `mapstructure:"container_name"`
 	CommandWrapper      string   `mapstructure:"command_wrapper"`
 	RawInitTimeout      string   `mapstructure:"init_timeout"`
