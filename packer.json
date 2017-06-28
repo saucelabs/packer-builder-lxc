@@ -14,7 +14,8 @@
 				"-a", "amd64"
 			],
 			"template_name": "ubuntu",
-			"export_name": "androidsdk64.tar.gz"
+			"export_name": "androidsdk64.tar.gz",
+			"export_folders": ["/tmp/android-sdk-linux", "/tmp/.android"]
 		}
 	],
 	"provisioners":
@@ -23,6 +24,14 @@
       "destination":"/tmp/ansible",
       "type":"file",
       "source":"ansible"
-    }
+    },
+		{
+			"type": "shell",
+			"inline":
+			[
+				"mkdir /tmp/android-sdk-linux",
+				"mkdir /tmp/.android"
+			]
+		}
 	]
 }
