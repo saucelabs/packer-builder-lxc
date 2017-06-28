@@ -43,7 +43,7 @@ Building from source
 ====================
 Install golang-go: https://golang.org/doc/install#install
 
-Building will require Go 1.6 (maybe 1.7?) or higher.
+Building will require Go 1.7 or higher.
 
 Install dependencies:
 * [gox](https://github.com/mitchellh/gox)
