@@ -84,9 +84,25 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 	commands[0] = []string{
 		"lxc-stop", "--name", name,
 	}
-	commands[1] = []string{
-		"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", outputPath, "./rootfs",
+
+	// Prepare tar command
+	command := []string{
+		"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", outputPath,
 	}
+	exportFolders := config.ExportFolders
+	baseRootfs := "./rootfs"
+	folders := []string { baseRootfs, }
+	l := len(exportFolders)
+	if l > 0 {
+		folders := make([]string, l)
+		for i := 0; i < l; i++ {
+			f := exportFolders[i]
+			// TODO - replace /
+			folders[i] = fmt.Sprintf("%s/%s", baseRootfs, f)
+		}
+	}
+	commands[1] = append(command, folders...)
+
 	commands[2] = []string{
 		"chmod", "+x", configFilePath,
 	}
