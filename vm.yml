@@ -84,6 +84,9 @@
         src: main.go
         dest: /home/vagrant/packer-plugins/src/github.com/saucelabs/packer-builder-lxc/
 
+    - name: "Remove packer-builder-lxc"
+      shell: rm -f /home/vagrant/packer-builder-lxc
+
     - name: "Build packer-builder-lxc"
       become: True
       command: "/home/vagrant/packer-plugins/bin/gox -os=linux -arch=amd64 -output=/home/vagrant/packer-builder-lxc"

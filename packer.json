@@ -13,7 +13,8 @@
 				"-r", "trusty",
 				"-a", "amd64"
 			],
-			"template_name": "ubuntu"
+			"template_name": "ubuntu",
+			"export_name": "androidsdk64.tar.gz"
 		}
 	],
 	"provisioners":
