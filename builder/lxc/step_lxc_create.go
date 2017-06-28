@@ -24,7 +24,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	lxc_dir := "/var/lib/lxc"
 	rootfs := filepath.Join(lxc_dir, name, "rootfs")
 
-	if config.PackerForce || config.CleanupFirst {
+	if config.PackerForce {
 		s.destroy(config.ContainerName, ui)
 	}
 
@@ -59,9 +59,6 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 
 func (s *stepLxcCreate) Cleanup(state multistep.StateBag) {
 	config := state.Get("config").(*Config)
-	if config.CleanupFirst {
-		return
-	}
 	s.destroy(config.ContainerName, state.Get("ui").(packer.Ui))
 }
 

@@ -30,7 +30,6 @@ type Config struct {
 	ContainerName       string            `mapstructure:"container_name"`
 	CommandWrapper      string            `mapstructure:"command_wrapper"`
 	RawInitTimeout      string            `mapstructure:"init_timeout"`
-	CleanupFirst        bool              `mapstructure:"cleanup_first"`
 	LxcTemplate         LxcTemplateConfig `mapstructure:"lxc_template"`
 	RootFs              RootFsConfig      `mapstructure:"rootfs"`
 	TargetRunlevel      int               `mapstructure:"target_runlevel"`
