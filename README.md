@@ -49,13 +49,15 @@ Install dependencies:
 * [gox](https://github.com/mitchellh/gox)
 * [go-fs](https://github.com/mitchellh/go-fs)
 * [multistep](https://github.com/mitchellh/multistep)
-* [this package!](https://github.com/JScott/packer-builder-lxc)
+* [packer](https://github.com/hashicorp/packer)
+* [this package!](https://github.com/saucelabs/packer-builder-lxc)
 
 ```bash
 go get github.com/mitchellh/gox
 go get github.com/mitchellh/go-fs
 go get github.com/mitchellh/multistep
-go get github.com/JScott/packer-builder-lxc
+go get github.com/hashicorp/packer
+go get github.com/saucelabs/packer-builder-lxc
 ```
 
 Remove a few vendors from Packer's new structure that will break packer-builder-lxc:
@@ -64,9 +66,9 @@ rm -rf ~/gopath/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/mult
 rm -rf ~/gopath/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/mapstructure
 ```
 
-Go to the source directory, usually it is in `~/gopath/src/github.com/ustream/packer-builder-lxc`
+Go to the source directory, usually it is in `~/gopath/src/github.com/saucelabs/packer-builder-lxc`
 ```bash
-cd ~/gopath/src/github.com/ustream/packer-builder-lxc
+cd ~/gopath/src/github.com/saucelabs/packer-builder-lxc
 ```
 
 Build binary file with `gox` for desired platform:
