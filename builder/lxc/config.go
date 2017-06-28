@@ -17,6 +17,11 @@ type LxcTemplateConfig struct {
 	EnvVars    []string
 }
 
+type RootFsConfig struct {
+	LxcConfig string
+	Archive   string
+}
+
 type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
 	ConfigFile          string            `mapstructure:"config_file"`
@@ -25,9 +30,9 @@ type Config struct {
 	ContainerName       string            `mapstructure:"container_name"`
 	CommandWrapper      string            `mapstructure:"command_wrapper"`
 	RawInitTimeout      string            `mapstructure:"init_timeout"`
-	CloneSource         string            `mapstructure:"clone_container"`
 	CleanupFirst        bool              `mapstructure:"cleanup_first"`
 	LxcTemplate         LxcTemplateConfig `mapstructure:"lxc_template"`
+	RootFs              RootFsConfig      `mapstructure:"rootfs"`
 	TargetRunlevel      int               `mapstructure:"target_runlevel"`
 	InitTimeout         time.Duration
 
@@ -78,6 +83,10 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 	c.InitTimeout, err = time.ParseDuration(c.RawInitTimeout)
 	if err != nil {
 		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Failed parsing init_timeout: %s", err))
+	}
+
+	if c.LxcTemplate.Name != "" && c.RootFs.Archive != "" {
+		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Cannot build with both lxc_template and rootfs configuration options"))
 	}
 
 	if errs != nil && len(errs.Errors) > 0 {

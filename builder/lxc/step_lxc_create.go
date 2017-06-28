@@ -28,31 +28,31 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		s.destroy(config.ContainerName, ui)
 	}
 
-	commands := make([][]string, 3)
-	if config.CloneSource == "" {
+	if config.LxcTemplate.Name != "" {
+		commands := make([][]string, 3)
 		commands[0] = append(config.LxcTemplate.EnvVars, []string{"lxc-create", "-n", name, "-t", config.LxcTemplate.Name, "--"}...)
 		commands[0] = append(commands[0], config.LxcTemplate.Parameters...)
-	} else {
-		commands[0] = []string{"lxc-clone", "--orig", config.CloneSource, "--new", name}
-	}
-	// prevent tmp from being cleaned on boot, we put provisioning scripts there
-	// todo: wait for init to finish before moving on to provisioning instead of this
-	commands[1] = []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")}
-	commands[2] = []string{"lxc-start", "-d", "--name", name}
+		// prevent tmp from being cleaned on boot, we put provisioning scripts there
+		// todo: wait for init to finish before moving on to provisioning instead of this
+		commands[1] = []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")}
+		commands[2] = []string{"lxc-start", "-d", "--name", name}
 
-	ui.Say("Creating container...")
-	for _, command := range commands {
-		log.Printf("Executing sudo command: %#v", command)
-		err := s.SudoCommand(command...)
-		if err != nil {
-			err := fmt.Errorf("Error creating container: %s", err)
-			state.Put("error", err)
-			ui.Error(err.Error())
-			return multistep.ActionHalt
+		ui.Say("Creating container...")
+		for _, command := range commands {
+			log.Printf("Executing sudo command: %#v", command)
+			err := s.SudoCommand(command...)
+			if err != nil {
+				err := fmt.Errorf("Error creating container: %s", err)
+				state.Put("error", err)
+				ui.Error(err.Error())
+				return multistep.ActionHalt
+			}
 		}
-	}
 
-	state.Put("mount_path", rootfs)
+		state.Put("mount_path", rootfs)
+	} else {
+		// TODO: Load the container from the provided rootfs archive
+	}
 
 	return multistep.ActionContinue
 }
