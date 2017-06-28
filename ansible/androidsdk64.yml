@@ -1,0 +1,21 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Create .android directory
+      file:
+        path: "/tmp/.android"
+        state: directory
+        mode: 0755
+        owner: 2000
+        group: 2000
+
+    # Create symlink for avd
+    - name: Create avds symlink
+      file:
+        src: /mnt/emu-vendorconfig
+        dest: /tmp/.android/avd
+        state: link
+        mode: 0755
+        owner: 2000
+        group: 2000
+        force: yes
