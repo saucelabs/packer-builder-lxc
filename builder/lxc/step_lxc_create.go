@@ -30,8 +30,8 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 
 	commands := make([][]string, 3)
 	if config.CloneSource == "" {
-		commands[0] = append(config.EnvVars, []string{"lxc-create", "-n", name, "-t", config.Name, "--"}...)
-		commands[0] = append(commands[0], config.Parameters...)
+		commands[0] = append(config.LxcTemplate.EnvVars, []string{"lxc-create", "-n", name, "-t", config.LxcTemplate.Name, "--"}...)
+		commands[0] = append(commands[0], config.LxcTemplate.Parameters...)
 	} else {
 		commands[0] = []string{"lxc-clone", "--orig", config.CloneSource, "--new", name}
 	}
