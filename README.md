@@ -57,18 +57,22 @@ go get github.com/mitchellh/gox
 go get github.com/mitchellh/go-fs
 go get github.com/mitchellh/multistep
 go get github.com/hashicorp/packer
-go get github.com/saucelabs/packer-builder-lxc
 ```
 
 Remove a few vendors from Packer's new structure that will break packer-builder-lxc:
 ```bash
-rm -rf ~/gopath/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/multistep
-rm -rf ~/gopath/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/mapstructure
+rm -rf $GOPATH/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/multistep
+rm -rf $GOPATH/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/mapstructure
 ```
 
-Go to the source directory, usually it is in `~/gopath/src/github.com/saucelabs/packer-builder-lxc`
+After removing the vendor binaries included with packer, you can install this plugin:
 ```bash
-cd ~/gopath/src/github.com/saucelabs/packer-builder-lxc
+go get github.com/saucelabs/packer-builder-lxc
+```
+
+Go to the source directory, usually it is in `$GOPATH/src/github.com/saucelabs/packer-builder-lxc`
+```bash
+cd $GOPATH/src/github.com/saucelabs/packer-builder-lxc
 ```
 
 Build binary file with `gox` for desired platform:
