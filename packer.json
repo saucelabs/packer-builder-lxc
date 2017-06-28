@@ -1,0 +1,27 @@
+{
+	"builders":
+	[
+		{
+			"type": "lxc",
+			"target_runlevel": 2,
+			"container_name": "androidsdk64-builder",
+			"config_file": "lxc.config",
+			"init_timeout": "120s",
+			"template_parameters":
+			[
+				"-d", "ubuntu",
+				"-r", "trusty",
+				"-a", "amd64"
+			],
+			"template_name": "ubuntu"
+		}
+	],
+	"provisioners":
+	[
+		{
+      "destination":"/tmp/ansible",
+      "type":"file",
+      "source":"ansible"
+    }
+	]
+}

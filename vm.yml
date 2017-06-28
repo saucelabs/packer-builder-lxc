@@ -1,0 +1,114 @@
+- hosts: all
+  tasks:
+    - name: "Install apt requirements"
+      sudo: yes
+      apt: pkg={{item}} state=installed update_cache=yes
+      with_items:
+        - lxc
+        - unzip
+        - git
+
+    - name: "Download packer 0.10.1"
+      command: curl -o /tmp/packer.zip https://releases.hashicorp.com/packer/0.10.1/packer_0.10.1_linux_amd64.zip
+      args:
+          creates: /tmp/packer.zip
+
+    - name: "Install packer 0.10.1"
+      become: yes
+      command: unzip /tmp/packer.zip -d /usr/local/bin
+      args:
+          creates: /usr/local/bin/packer
+
+    - name: "Download go 1.7"
+      command: curl -o /tmp/go.tar.gz https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz
+      args:
+          creates: /tmp/go.tar.gz
+
+    - name: "Install go 1.7"
+      become: yes
+      command: tar -xf /tmp/go.tar.gz -C /usr/local
+      args:
+          creates: /usr/local/go
+
+    - name: "Add go to PATH"
+      lineinfile:
+          dest: /home/vagrant/.profile
+          line: "export PATH=$PATH:/usr/local/go/bin"
+
+    - name: "Create go workspace"
+      file:
+          path: /home/vagrant/packer-plugins
+          state: directory
+
+    - name: "Create GOPATH env var"
+      lineinfile:
+          dest: /home/vagrant/.profile
+          line: "export GOPATH=/home/vagrant/packer-plugins"
+
+    - name: "Download packer-builder-lxc dependencies"
+      command: "/usr/local/go/bin/go get {{ item.repo }}"
+      environment:
+          GOPATH: /home/vagrant/packer-plugins
+      args:
+          creates: "{{ item.artifact }}"
+      with_items:
+          - repo: github.com/mitchellh/gox
+            artifact: /home/vagrant/packer-plugins/src/github.com/mitchellh/gox
+          - repo: github.com/mitchellh/go-fs
+            artifact: /home/vagrant/packer-plugins/src/github.com/mitchellh/go-fs
+          - repo: github.com/mitchellh/multistep
+            artifact: /home/vagrant/packer-plugins/src/github.com/mitchellh/multistep
+          - repo: github.com/mitchellh/mapstructure
+            artifact: /home/vagrant/packer-plugins/src/github.com/mitchellh/mapstructure
+          - repo: github.com/hashicorp/packer
+            artifact: /home/vagrant/packer-plugins/src/github.com/hashicorp/packer
+
+    - name: "Remove conflicting vendor binaries (see https://github.com/saucelabs/packer-builder-lxc#building-from-source)"
+      file:
+          path: "{{ item }}"
+          state: absent
+      with_items:
+          - /home/vagrant/packer-plugins/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/multistep
+          - /home/vagrant/packer-plugins/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/mapstructure
+
+    - name: "Create packer-builder-lxc folder"
+      shell: mkdir -p /home/vagrant/packer-plugins/src/github.com/saucelabs/packer-builder-lxc
+
+    - name: "Copy builder source"
+      copy:
+        src: builder
+        dest: /home/vagrant/packer-plugins/src/github.com/saucelabs/packer-builder-lxc
+
+    - name: "Copy main.go source"
+      copy:
+        src: main.go
+        dest: /home/vagrant/packer-plugins/src/github.com/saucelabs/packer-builder-lxc/
+
+    - name: "Build packer-builder-lxc"
+      become: True
+      command: "/home/vagrant/packer-plugins/bin/gox -os=linux -arch=amd64 -output=/home/vagrant/packer-builder-lxc"
+      environment:
+          PATH: "$PATH:/usr/local/go/bin"
+          GOPATH: /home/vagrant/packer-plugins
+      args:
+          chdir: /home/vagrant/packer-plugins/src/github.com/saucelabs/packer-builder-lxc
+          creates: /home/vagrant/packer-builder-lxc
+
+    - name: "Configure packer to use lxc-builder"
+      lineinfile:
+          create: yes
+          dest: /home/vagrant/.packerconfig
+          line: "{\"builders\": { \"lxc\": \"/home/vagrant/packer-builder-lxc\" } }"
+
+    - name: "Copy packer files"
+      copy:
+          src: "{{ item }}"
+          dest: "/home/vagrant/{{ item }}"
+      with_items:
+          - packer.json
+          - lxc.config
+
+    - name: "Copy ansible dir"
+      copy:
+          src: ansible
+          dest: /home/vagrant
