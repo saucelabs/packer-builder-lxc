@@ -97,7 +97,8 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 		folders := make([]string, l)
 		for i := 0; i < l; i++ {
 			f := exportFolders[i]
-			// TODO - replace /
+			// TODO - replace exportFolder first /
+			// TODO - maybe use map function for this
 			folders[i] = fmt.Sprintf("%s/%s", baseRootfs, f)
 		}
 	}
