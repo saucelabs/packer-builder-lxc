@@ -15,7 +15,10 @@
 			],
 			"template_name": "ubuntu",
 			"export_name": "androidsdk64.tar.gz",
-			"export_folders": ["/tmp/android-sdk-linux", "/tmp/.android"]
+			"export_folders": [
+				{ "src": "/tmp/android-sdk-linux", "dest": "/mytar/android-sdk-linux" },
+				{ "src": "/tmp/.android", "dest": "/mytar/tmp/.android" }
+			]
 		}
 	],
 	"provisioners":

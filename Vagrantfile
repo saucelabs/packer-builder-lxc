@@ -14,5 +14,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provision "ansible" do |ansible|
       ansible.playbook = "vm.yml"
+      ansible.skip_tags = "install"
   end
 end
