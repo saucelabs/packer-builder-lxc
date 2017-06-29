@@ -7,43 +7,51 @@
         - lxc
         - unzip
         - git
+      tags: install
 
     - name: "Download packer 0.10.1"
       command: curl -o /tmp/packer.zip https://releases.hashicorp.com/packer/0.10.1/packer_0.10.1_linux_amd64.zip
       args:
           creates: /tmp/packer.zip
+      tags: install
 
     - name: "Install packer 0.10.1"
       become: yes
       command: unzip /tmp/packer.zip -d /usr/local/bin
       args:
           creates: /usr/local/bin/packer
+      tags: install
 
     - name: "Download go 1.7"
       command: curl -o /tmp/go.tar.gz https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz
       args:
           creates: /tmp/go.tar.gz
+      tags: install
 
     - name: "Install go 1.7"
       become: yes
       command: tar -xf /tmp/go.tar.gz -C /usr/local
       args:
           creates: /usr/local/go
+      tags: install
 
     - name: "Add go to PATH"
       lineinfile:
           dest: /home/vagrant/.profile
           line: "export PATH=$PATH:/usr/local/go/bin"
+      tags: install
 
     - name: "Create go workspace"
       file:
           path: /home/vagrant/packer-plugins
           state: directory
+      tags: install
 
     - name: "Create GOPATH env var"
       lineinfile:
           dest: /home/vagrant/.profile
           line: "export GOPATH=/home/vagrant/packer-plugins"
+      tags: install
 
     - name: "Download packer-builder-lxc dependencies"
       command: "/usr/local/go/bin/go get {{ item.repo }}"
@@ -62,6 +70,7 @@
             artifact: /home/vagrant/packer-plugins/src/github.com/mitchellh/mapstructure
           - repo: github.com/hashicorp/packer
             artifact: /home/vagrant/packer-plugins/src/github.com/hashicorp/packer
+      tags: install
 
     - name: "Remove conflicting vendor binaries (see https://github.com/saucelabs/packer-builder-lxc#building-from-source)"
       file:
@@ -70,9 +79,11 @@
       with_items:
           - /home/vagrant/packer-plugins/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/multistep
           - /home/vagrant/packer-plugins/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/mapstructure
+      tags: install
 
     - name: "Create packer-builder-lxc folder"
       shell: mkdir -p /home/vagrant/packer-plugins/src/github.com/saucelabs/packer-builder-lxc
+      tags: install
 
     - name: "Copy builder source"
       copy:
