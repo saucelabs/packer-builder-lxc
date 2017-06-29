@@ -18,7 +18,7 @@ type LxcTemplateConfig struct {
 }
 
 type RootFsConfig struct {
-	LxcConfig string
+	LxcConfig string `mapstructure:"lxc_config"`
 	Archive   string
 }
 
