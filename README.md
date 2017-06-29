@@ -200,6 +200,38 @@ Creating and cloning a build:
 }
 ```
 
+Export options:
+
+Change the export tarball and cherry pick folders you want to export
+```json
+{
+  "builders": [
+    {
+      "type": "lxc",
+      "target_runlevel": 2,
+      "container_name": "base",
+      "config_file": "lxc.config",
+      "init_timeout": "120s",
+      "template_parameters": [
+        "-d",
+        "ubuntu",
+        "-r",
+        "trusty",
+        "-a",
+        "amd64"
+      ],
+      "template_name": "ubuntu",
+      "export_name": "mytar.tar.gz",
+      "export_folders": [
+        { "src": "/tmp", "dest": "/mytar/temp" }
+      ]
+    }
+  ]
+}
+```
+
+
+
 Vagrant publishing
 ==================
 
