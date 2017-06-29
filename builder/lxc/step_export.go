@@ -11,8 +11,7 @@ import (
 	"path/filepath"
 	"os"
 	"io"
-	"encoding/json"
-	"regexp"
+	"encoding/json"	
 )
 
 type stepExport struct{}
@@ -86,10 +85,23 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 		"lxc-stop", "--name", name,
 	}
 
-	commands[1] = append([]string{
-		"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", outputPath,
-	}, s.ExportFolders(config.ExportFolders)...)
-	ui.Say(strings.Join(commands[1], " "))
+	if len(config.ExportFolders) == 0 {
+		commands[1] = []string{
+			"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", outputPath, "./rootfs",
+		}
+	} else {
+		ui.Say("Preparing container to export...")
+		err, exportFolder := s.PrepareExport(containerDir, config.ExportFolders)
+		if err != nil {
+			err := fmt.Errorf("Error creating container export folder: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+		commands[1] = []string{
+			"tar", "-C", exportFolder, "--numeric-owner", "--anchored", "-czf", outputPath, ".",
+		}
+	}
 
 	commands[2] = []string{
 		"chmod", "+x", configFilePath,
@@ -112,21 +124,27 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 	return multistep.ActionContinue
 }
 
-func (s *stepExport) ExportFolders(exportFolders []string) []string {
-	l := len(exportFolders)
-	if l > 0 {
-		folders := make([]string, l)
-		for i := 0; i < l; i++ {
-			folders[i] = fmt.Sprintf("%s/%s", "./rootfs", s.CleanFolder(exportFolders[i]))
-		}
-		return folders
+func (s *stepExport) PrepareExport(containerDir string, exportFolders []ExportConfig) (error, string) {
+	containerDir = filepath.Join(containerDir, "rootfs")
+	exportFolder := filepath.Join(containerDir, "lxc-export-container-dir")
+	err := s.SudoCommand([]string{ "mkdir", "-p", exportFolder}...)
+	if err != nil {
+		return err, exportFolder
 	}
-	return []string{ "./rootfs" }
-}
-
-func (s *stepExport) CleanFolder(folder string) string {
-	re := regexp.MustCompile(`^/`)
-	return re.ReplaceAllLiteralString(folder, "")
+	for i := 0; i < len(exportFolders); i++ {
+		src := filepath.Join(containerDir, exportFolders[i].Src)
+		dest := filepath.Join(exportFolder, exportFolders[i].Dest)
+		destFolder := filepath.Dir(dest)
+		err = s.SudoCommand([]string{ "mkdir", "-p", destFolder}...)
+		if err != nil {
+			return err, exportFolder
+		}
+		err = s.SudoCommand([]string{ "mv", src, dest}...)
+		if err != nil {
+			return err, exportFolder
+		}
+	}
+	return nil, exportFolder
 }
 
 func (s *stepExport) Cleanup(state multistep.StateBag) {}
