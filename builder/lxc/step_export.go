@@ -12,6 +12,7 @@ import (
 	"os"
 	"io"
 	"encoding/json"
+	"regexp"
 )
 
 type stepExport struct{}
@@ -85,24 +86,10 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 		"lxc-stop", "--name", name,
 	}
 
-	// Prepare tar command
-	command := []string{
+	commands[1] = append([]string{
 		"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", outputPath,
-	}
-	exportFolders := config.ExportFolders
-	baseRootfs := "./rootfs"
-	folders := []string { baseRootfs, }
-	l := len(exportFolders)
-	if l > 0 {
-		folders := make([]string, l)
-		for i := 0; i < l; i++ {
-			f := exportFolders[i]
-			// TODO - replace exportFolder first /
-			// TODO - maybe use map function for this
-			folders[i] = fmt.Sprintf("%s/%s", baseRootfs, f)
-		}
-	}
-	commands[1] = append(command, folders...)
+	}, s.ExportFolders(config.ExportFolders)...)
+	ui.Say(strings.Join(commands[1], " "))
 
 	commands[2] = []string{
 		"chmod", "+x", configFilePath,
@@ -123,6 +110,23 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 	}
 
 	return multistep.ActionContinue
+}
+
+func (s *stepExport) ExportFolders(exportFolders []string) []string {
+	l := len(exportFolders)
+	if l > 0 {
+		folders := make([]string, l)
+		for i := 0; i < l; i++ {
+			folders[i] = fmt.Sprintf("%s/%s", "./rootfs", s.CleanFolder(exportFolders[i]))
+		}
+		return folders
+	}
+	return []string{ "./rootfs" }
+}
+
+func (s *stepExport) CleanFolder(folder string) string {
+	re := regexp.MustCompile(`^/`)
+	return re.ReplaceAllLiteralString(folder, "")
 }
 
 func (s *stepExport) Cleanup(state multistep.StateBag) {}
