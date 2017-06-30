@@ -208,7 +208,7 @@ Creating and cloning a build:
 
 Export options:
 
-Change the export tarball and cherry pick folders you want to export
+Change the export tarball name and cherry pick folders you want to export
 ```json
 {
   "builders": [
