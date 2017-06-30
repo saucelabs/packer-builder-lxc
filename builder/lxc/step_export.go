@@ -127,15 +127,21 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 func (s *stepExport) PrepareExport(containerDir string, exportFolders []ExportConfig) (error, string) {
 	containerDir = filepath.Join(containerDir, "rootfs")
 	exportFolder := filepath.Join(containerDir, "lxc-export-container-dir")
+	err := s.SudoCommand([]string{ "mkdir", "-p", exportFolder}...)
+	if err != nil {
+		return nil, exportFolder
+	}
 	for i := 0; i < len(exportFolders); i++ {
 		src := filepath.Join(containerDir, exportFolders[i].Src)
 		dest := filepath.Join(exportFolder, exportFolders[i].Dest)
 		destFolder := filepath.Dir(dest)
-		err := s.SudoCommand([]string{ "mkdir", "-p", destFolder}...)
-		if err != nil {
-			return err, exportFolder
+		if destFolder != exportFolder {
+			err := s.SudoCommand([]string{ "mkdir", "-p", destFolder}...)
+			if err != nil {
+				return err, exportFolder
+			}
 		}
-		err = s.SudoCommand([]string{ "mv", src, dest}...)
+		err := s.SudoCommand([]string{ "mv", src, dest}...)
 		if err != nil {
 			return err, exportFolder
 		}
