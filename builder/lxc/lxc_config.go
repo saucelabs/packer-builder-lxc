@@ -3,6 +3,7 @@ package lxc
 import (
 	"io/ioutil"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -22,9 +23,9 @@ func NewLxcConfig(path string) (*LxcConfig, error) {
 }
 
 func (c *LxcConfig) SetRootFs(path string) {
+	pattern := regexp.MustCompile(`^lxc.rootfs\s*=\s*.*$`)
 	for i, line := range c.lines {
-		// TODO: regex this check
-		if strings.Contains(line, "lxc.rootfs") {
+		if pattern.MatchString(line) {
 			c.lines[i] = "lxc.rootfs = " + filepath.Join(path, "rootfs")
 		}
 	}
