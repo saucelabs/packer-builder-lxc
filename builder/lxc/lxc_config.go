@@ -31,8 +31,8 @@ func (c *LxcConfig) SetRootFs(path string) {
 	}
 }
 
-func (c *LxcConfig) Write() error {
+func (c *LxcConfig) Write(filename string) error {
 	output := strings.Join(c.lines, "\n")
-	err := ioutil.WriteFile(c.filePath, []byte(output), 0644)
+	err := ioutil.WriteFile(filename, []byte(output), 0644)
 	return err
 }

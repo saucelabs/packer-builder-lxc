@@ -3,6 +3,7 @@ package lxc
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os/exec"
 	"path/filepath"
@@ -57,7 +58,13 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 			ui.Error(err.Error())
 		}
 		containerConfig.SetRootFs(containerPath)
-		err = containerConfig.Write()
+		tmpDir, err := ioutil.TempDir("", "lxcconfig")
+		if err != nil {
+			err := fmt.Errorf("Error creating container: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+		}
+		err = containerConfig.Write(filepath.Join(tmpDir, "lxc.config"))
 		if err != nil {
 			err := fmt.Errorf("Error creating container: %s", err)
 			state.Put("error", err)
@@ -67,7 +74,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		commands := make([][]string, 4)
 		commands[0] = []string{"mkdir", containerPath}
 		commands[1] = []string{"tar", "-C", containerPath, "-xf", config.RootFs.Archive}
-		commands[2] = []string{"cp", containerConfig.filePath, filepath.Join(containerPath, "config")}
+		commands[2] = []string{"cp", filepath.Join(tmpDir, "lxc.config"), filepath.Join(containerPath, "config")}
 		commands[3] = []string{"lxc-start", "-d", "-n", name}
 
 		ui.Say("Starting container...")
