@@ -50,19 +50,33 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		}
 	} else {
 		containerPath := filepath.Join(lxc_dir, name)
-		commands := make([][]string, 4)
+		containerConfig, err := NewLxcConfig(config.RootFs.LxcConfig)
+		if err != nil {
+			err := fmt.Errorf("Error creating container: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+		}
+		containerConfig.SetRootFs(containerPath)
+		err = containerConfig.Write()
+		if err != nil {
+			err := fmt.Errorf("Error creating container: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+		}
 
+		commands := make([][]string, 4)
 		commands[0] = []string{"mkdir", containerPath}
 		commands[1] = []string{"tar", "-C", containerPath, "-xf", config.RootFs.Archive}
-		// TODO: config file needs to define path to rootfs as the lxc.rootfs property
-		commands[2] = []string{"cp", config.RootFs.LxcConfig, filepath.Join(containerPath, "config")}
+		commands[2] = []string{"cp", containerConfig.filePath, filepath.Join(containerPath, "config")}
 		commands[3] = []string{"lxc-start", "-d", "-n", name}
 
 		ui.Say("Starting container...")
 		for _, command := range commands {
 			log.Printf("Executing sudo command: %#v", command)
+			ui.Say(fmt.Sprintf("Executing sudo command: %#v", command))
 			err := s.SudoCommand(command...)
 			if err != nil {
+				// TODO: Delete unpacked rootfs and config
 				err := fmt.Errorf("Error creating container: %s", err)
 				state.Put("error", err)
 				ui.Error(err.Error())
