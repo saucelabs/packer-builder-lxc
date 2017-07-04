@@ -43,30 +43,36 @@ Building from source
 ====================
 Install golang-go: https://golang.org/doc/install#install
 
-Building will require Go 1.6 (maybe 1.7?) or higher.
+Building will require Go 1.7 or higher.
 
 Install dependencies:
 * [gox](https://github.com/mitchellh/gox)
 * [go-fs](https://github.com/mitchellh/go-fs)
 * [multistep](https://github.com/mitchellh/multistep)
-* [this package!](https://github.com/JScott/packer-builder-lxc)
+* [packer](https://github.com/hashicorp/packer)
+* [this package!](https://github.com/saucelabs/packer-builder-lxc)
 
 ```bash
 go get github.com/mitchellh/gox
 go get github.com/mitchellh/go-fs
 go get github.com/mitchellh/multistep
-go get github.com/JScott/packer-builder-lxc
+go get github.com/hashicorp/packer
 ```
 
 Remove a few vendors from Packer's new structure that will break packer-builder-lxc:
 ```bash
-rm -rf ~/gopath/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/multistep
-rm -rf ~/gopath/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/mapstructure
+rm -rf $GOPATH/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/multistep
+rm -rf $GOPATH/src/github.com/hashicorp/packer/vendor/github.com/mitchellh/mapstructure
 ```
 
-Go to the source directory, usually it is in `~/gopath/src/github.com/ustream/packer-builder-lxc`
+After removing the vendor binaries included with packer, you can install this plugin:
 ```bash
-cd ~/gopath/src/github.com/ustream/packer-builder-lxc
+go get github.com/saucelabs/packer-builder-lxc
+```
+
+Go to the source directory, usually it is in `$GOPATH/src/github.com/saucelabs/packer-builder-lxc`
+```bash
+cd $GOPATH/src/github.com/saucelabs/packer-builder-lxc
 ```
 
 Build binary file with `gox` for desired platform:
