@@ -32,9 +32,7 @@ type Config struct {
 
 type ExportConfig struct {
 	Filename string  `mapstructure:"filename"`
-	Folders          []ExportFolder `mapstructure:"folders"`
-	Owner string     `mapstructure:"owner"`
-	Group string     `mapstructure:"group"`
+	Folders          []ExportFolder `mapstructure:"folders"`	
 }
 
 type ExportFolder struct {
