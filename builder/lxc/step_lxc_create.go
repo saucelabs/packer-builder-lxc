@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -18,34 +19,33 @@ type stepLxcCreate struct{}
 func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
-
-	name := config.ContainerName
+	errorHandler := func(err error) {
+		state.Put("error", err)
+		ui.Error(err.Error())
+	}
 
 	// TODO: read from env
 	lxc_dir := "/var/lib/lxc"
+	name := config.ContainerName
 	rootfs := filepath.Join(lxc_dir, name, "rootfs")
 
 	if config.PackerForce {
-		s.destroy(config.ContainerName, ui)
+		s.destroy(name, ui)
 	}
 
 	if config.LxcTemplate.Name != "" {
-		commands := make([][]string, 3)
+		commands := make([][]string, 2)
 		commands[0] = append(config.LxcTemplate.EnvVars, []string{"lxc-create", "-n", name, "-t", config.LxcTemplate.Name, "--"}...)
 		commands[0] = append(commands[0], config.LxcTemplate.Parameters...)
 		// prevent tmp from being cleaned on boot, we put provisioning scripts there
-		// todo: wait for init to finish before moving on to provisioning instead of this
+		// TODO: wait for init to finish before moving on to provisioning instead of this
 		commands[1] = []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")}
-		commands[2] = []string{"lxc-start", "-d", "--name", name}
 
 		ui.Say("Creating container...")
 		for _, command := range commands {
 			log.Printf("Executing sudo command: %#v", command)
-			err := s.SudoCommand(command...)
-			if err != nil {
-				err := fmt.Errorf("Error creating container: %s", err)
-				state.Put("error", err)
-				ui.Error(err.Error())
+			if err := s.SudoCommand(command...); err != nil {
+				errorHandler(fmt.Errorf("Error creating container: %s", err))
 				return multistep.ActionHalt
 			}
 		}
@@ -53,43 +53,40 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		containerPath := filepath.Join(lxc_dir, name)
 		containerConfig, err := NewLxcConfig(config.RootFs.LxcConfig)
 		if err != nil {
-			err := fmt.Errorf("Error creating container: %s", err)
-			state.Put("error", err)
-			ui.Error(err.Error())
+			errorHandler(fmt.Errorf("Error creating container: %s", err))
+			return multistep.ActionHalt
 		}
 		containerConfig.SetRootFs(rootfs)
 		tmpDir, err := ioutil.TempDir("", "lxcconfig")
 		if err != nil {
-			err := fmt.Errorf("Error creating container: %s", err)
-			state.Put("error", err)
-			ui.Error(err.Error())
+			errorHandler(fmt.Errorf("Error creating container: %s", err))
+			return multistep.ActionHalt
 		}
 		err = containerConfig.Write(filepath.Join(tmpDir, "lxc.config"))
 		if err != nil {
-			err := fmt.Errorf("Error creating container: %s", err)
-			state.Put("error", err)
-			ui.Error(err.Error())
+			os.RemoveAll(tmpDir)
+			errorHandler(fmt.Errorf("Error creating container: %s", err))
+			return multistep.ActionHalt
 		}
 
-		commands := make([][]string, 4)
+		commands := make([][]string, 3)
 		commands[0] = []string{"mkdir", containerPath}
 		commands[1] = []string{"tar", "-C", containerPath, "-xf", config.RootFs.Archive}
 		commands[2] = []string{"cp", filepath.Join(tmpDir, "lxc.config"), filepath.Join(containerPath, "config")}
-		commands[3] = []string{"lxc-start", "-d", "-n", name}
 
-		ui.Say("Starting container...")
+		ui.Say("Creating container...")
 		for _, command := range commands {
 			log.Printf("Executing sudo command: %#v", command)
-			ui.Say(fmt.Sprintf("Executing sudo command: %#v", command))
-			err := s.SudoCommand(command...)
-			if err != nil {
-				// TODO: Delete unpacked rootfs and config
-				err := fmt.Errorf("Error creating container: %s", err)
-				state.Put("error", err)
-				ui.Error(err.Error())
+			if err := s.SudoCommand(command...); err != nil {
+				errorHandler(fmt.Errorf("Error creating container: %s", err))
 				return multistep.ActionHalt
 			}
 		}
+	}
+	ui.Say("Creating container...")
+	if err := s.SudoCommand("lxc-start", "-d", "-n", name); err != nil {
+		errorHandler(fmt.Errorf("Error starting container: %s", err))
+		return multistep.ActionHalt
 	}
 
 	state.Put("mount_path", rootfs)
