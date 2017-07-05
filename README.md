@@ -227,21 +227,19 @@ Change the export tarball name and cherry pick folders you want to export
         "amd64"
       ],
       "template_name": "ubuntu",
-      "export_name": "mytar.tar.gz",
-      "export_folders": [
-        { "src": "/tmp", "dest": "/mytar/temp" }
-      ],
-      "export_permissions": {
-        "owner": "2000",
-        "group": "2000"
-      }
+      "export_config" : {
+				"filename": "androidsdk64.tar.gz",
+				"folders": [
+					{ "src": "/tmp/android-sdk-linux", "dest": "/mytar/android-sdk-linux" },
+					{ "src": "/tmp/.android", "dest": "/mytar/tmp/.android" }
+				],
+				"owner": 2000,
+				"group": 2000
+			}
     }
   ]
 }
 ```
-
-*export_permissions* can only we used when setting export_folders
-
 
 
 Vagrant publishing
