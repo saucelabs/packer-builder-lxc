@@ -240,6 +240,8 @@ Change the export tarball name and cherry pick folders you want to export
 }
 ```
 
+*export_permissions* can only we used when setting export_folders
+
 
 
 Vagrant publishing
