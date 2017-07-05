@@ -230,7 +230,11 @@ Change the export tarball name and cherry pick folders you want to export
       "export_name": "mytar.tar.gz",
       "export_folders": [
         { "src": "/tmp", "dest": "/mytar/temp" }
-      ]
+      ],
+      "export_permissions": {
+        "owner": "2000",
+        "group": "2000"
+      }
     }
   ]
 }
