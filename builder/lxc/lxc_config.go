@@ -2,7 +2,6 @@ package lxc
 
 import (
 	"io/ioutil"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -23,12 +22,18 @@ func NewLxcConfig(path string) (*LxcConfig, error) {
 }
 
 func (c *LxcConfig) SetRootFs(path string) {
-	pattern := regexp.MustCompile(`^lxc.rootfs\s*=\s*.*$`)
+	c.SetProp("lxc.rootfs", path)
+}
+
+func (c *LxcConfig) SetProp(key string, value string) {
+	pattern := regexp.MustCompile(`^\s*` + key + `=\s*.*$`)
 	for i, line := range c.lines {
 		if pattern.MatchString(line) {
-			c.lines[i] = "lxc.rootfs = " + filepath.Join(path, "rootfs")
+			c.lines[i] = key + " = " + value
+			return
 		}
 	}
+	c.lines = append(c.lines, key+" = "+value)
 }
 
 func (c *LxcConfig) Write(filename string) error {

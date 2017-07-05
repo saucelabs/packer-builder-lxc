@@ -57,7 +57,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 			state.Put("error", err)
 			ui.Error(err.Error())
 		}
-		containerConfig.SetRootFs(containerPath)
+		containerConfig.SetRootFs(rootfs)
 		tmpDir, err := ioutil.TempDir("", "lxcconfig")
 		if err != nil {
 			err := fmt.Errorf("Error creating container: %s", err)
