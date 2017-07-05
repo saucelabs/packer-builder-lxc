@@ -17,6 +17,7 @@ type Config struct {
 	OutputDir           string   `mapstructure:"output_directory"`
 	ExportName					string   `mapstructure:"export_name"`
 	ExportFolders				[]ExportConfig `mapstructure:"export_folders"`
+	ExportPermissions   ExportPermissions `mapstructure:"export_permissions"`
 	ContainerName       string   `mapstructure:"container_name"`
 	CommandWrapper      string   `mapstructure:"command_wrapper"`
 	RawInitTimeout      string   `mapstructure:"init_timeout"`
@@ -34,6 +35,11 @@ type Config struct {
 type ExportConfig struct {
 	Src string `mapstructure:"src"`
 	Dest string `mapstructure:"dest"`
+}
+
+type ExportPermissions struct {
+	Owner string `mapstructure:"owner"`
+	Group string `mapstructure:"group"`
 }
 
 func NewConfig(raws ...interface{}) (*Config, error) {
