@@ -28,7 +28,6 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 	name := config.ContainerName
 
 	containerDir := fmt.Sprintf("/var/lib/lxc/%s", name)
-	outputPath := filepath.Join(config.OutputDir, config.ExportName)
 	configFilePath := filepath.Join(config.OutputDir, "lxc-config")
 	metadataFilePath := filepath.Join(config.OutputDir, "metadata.json")
 
@@ -85,13 +84,18 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 		"lxc-stop", "--name", name,
 	}
 
-	if len(config.ExportFolders) == 0 {
+	if len(config.ExportConfig.Folders) == 0 {
 		commands[1] = []string{
-			"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", outputPath, "./rootfs",
+			"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", "rootfs.tar.gz", "./rootfs",
 		}
 	} else {
 		ui.Say("Preparing container to export...")
-		err, exportFolder := s.PrepareExport(containerDir, config.ExportFolders)
+		filename := "rootfs.tar.gz"
+		if config.ExportConfig.Filename != "" {
+			filename = config.ExportConfig.Filename
+		}
+		outputPath := filepath.Join(config.OutputDir, filename)
+		err, exportFolder := s.PrepareExport(containerDir, config.ExportConfig.Folders)
 		if err != nil {
 			err := fmt.Errorf("Error creating container export folder: %s", err)
 			state.Put("error", err)
@@ -99,15 +103,13 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 			return multistep.ActionHalt
 		}
 		command := []string{
-			"tar", "-C", exportFolder, "--numeric-owner", "--anchored", "-czf", outputPath, ".",
+			"tar", "-C", exportFolder, "--anchored", "-czf", outputPath, ".",
 		}
-		if config.ExportPermissions != (ExportPermissions{}) {
-			if config.ExportPermissions.Owner != "" {
-				command = append(command, []string{"--owner", config.ExportPermissions.Owner}...)
-			}
-			if config.ExportPermissions.Group != "" {
-				command = append(command, []string{"--group", config.ExportPermissions.Owner}...)
-			}
+		if config.ExportConfig.Owner != "" {
+			command = append(command, []string{"--owner", config.ExportConfig.Owner}...)
+		}
+		if config.ExportConfig.Group != "" {
+			command = append(command, []string{"--group", config.ExportConfig.Owner}...)
 		}
 		commands[1] = command
 	}
@@ -133,8 +135,11 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 	return multistep.ActionContinue
 }
 
-func (s *stepExport) PrepareExport(containerDir string, exportFolders []ExportConfig) (error, string) {
+func (s *stepExport) PrepareExport(containerDir string, exportFolders []ExportFolder) (error, string) {
 	containerDir = filepath.Join(containerDir, "rootfs")
+	if len(exportFolders) == 0 {
+		return nil, containerDir
+	}
 	exportFolder := filepath.Join(containerDir, "lxc-export-container-dir")
 	err := s.SudoCommand([]string{ "mkdir", "-p", exportFolder}...)
 	if err != nil {
