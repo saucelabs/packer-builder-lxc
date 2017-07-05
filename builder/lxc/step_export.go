@@ -98,11 +98,20 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 			ui.Error(err.Error())
 			return multistep.ActionHalt
 		}
-		commands[1] = []string{
+		command := []string{
 			"tar", "-C", exportFolder, "--numeric-owner", "--anchored", "-czf", outputPath, ".",
 		}
+		if config.ExportPermissions != (ExportPermissions{}) {
+			if config.ExportPermissions.Owner != "" {
+				command = append(command, []string{"--owner", config.ExportPermissions.Owner}...)
+			}
+			if config.ExportPermissions.Group != "" {
+				command = append(command, []string{"--group", config.ExportPermissions.Owner}...)
+			}
+		}
+		commands[1] = command
 	}
-
+	
 	commands[2] = []string{
 		"chmod", "+x", configFilePath,
 	}
