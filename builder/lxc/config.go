@@ -15,9 +15,7 @@ type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
 	ConfigFile          string   `mapstructure:"config_file"`
 	OutputDir           string   `mapstructure:"output_directory"`
-	ExportName					string   `mapstructure:"export_name"`
-	ExportFolders				[]ExportConfig `mapstructure:"export_folders"`
-	ExportPermissions   ExportPermissions `mapstructure:"export_permissions"`
+	ExportConfig        ExportConfig  `mapstructure:"export_config"`
 	ContainerName       string   `mapstructure:"container_name"`
 	CommandWrapper      string   `mapstructure:"command_wrapper"`
 	RawInitTimeout      string   `mapstructure:"init_timeout"`
@@ -33,13 +31,15 @@ type Config struct {
 }
 
 type ExportConfig struct {
-	Src string `mapstructure:"src"`
-	Dest string `mapstructure:"dest"`
+	Filename string  `mapstructure:"filename"`
+	Folders          []ExportFolder `mapstructure:"folders"`
+	Owner string     `mapstructure:"owner"`
+	Group string     `mapstructure:"group"`
 }
 
-type ExportPermissions struct {
-	Owner string `mapstructure:"owner"`
-	Group string `mapstructure:"group"`
+type ExportFolder struct {
+	Src string `mapstructure:"src"`
+	Dest string `mapstructure:"dest"`
 }
 
 func NewConfig(raws ...interface{}) (*Config, error) {
@@ -59,10 +59,6 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 
 	if c.OutputDir == "" {
 		c.OutputDir = fmt.Sprintf("output-%s", c.PackerBuildName)
-	}
-
-	if c.ExportName == "" {
-		c.ExportName = "rootfs.tar.gz"
 	}
 
 	if c.ContainerName == "" {
