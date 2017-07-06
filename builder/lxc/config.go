@@ -18,8 +18,8 @@ type LxcTemplateConfig struct {
 }
 
 type RootFsConfig struct {
-	LxcConfig string `mapstructure:"lxc_config"`
-	Archive   string
+	ConfigFile string `mapstructure:"config"`
+	Archive    string
 }
 
 type Config struct {
@@ -84,7 +84,7 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Failed parsing init_timeout: %s", err))
 	}
 
-	if c.LxcTemplate.Name != "" && c.RootFs.Archive != "" {
+	if c.LxcTemplate.Name != "" && c.RootFs != (RootFsConfig{}) {
 		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Cannot build with both lxc_template and rootfs configuration options"))
 	}
 

@@ -51,9 +51,9 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		}
 	} else {
 		containerPath := filepath.Join(lxc_dir, name)
-		containerConfig, err := NewLxcConfig(config.RootFs.LxcConfig)
+		containerConfig, err := NewLxcConfig(config.RootFs.ConfigFile)
 		if err != nil {
-			errorHandler(fmt.Errorf("Could not read lxc config (%s): %s", config.RootFs.LxcConfig, err))
+			errorHandler(fmt.Errorf("Could not read lxc config (%s): %s", config.RootFs.ConfigFile, err))
 			return multistep.ActionHalt
 		}
 		containerConfig.SetRootFs(rootfs)
@@ -74,7 +74,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		commands[1] = []string{"tar", "-C", containerPath, "-xf", config.RootFs.Archive}
 		commands[2] = []string{"cp", filepath.Join(tmpDir, "lxc.config"), filepath.Join(containerPath, "config")}
 
-		ui.Say(fmt.Sprintf("Creating container from archive...: %s", config.RootFs.Archive))
+		ui.Say(fmt.Sprintf("Creating container from archive: %s", config.RootFs.Archive))
 		for _, command := range commands {
 			log.Printf("Executing sudo command: %#v", command)
 			if err := s.SudoCommand(command...); err != nil {
@@ -84,7 +84,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		}
 		os.RemoveAll(tmpDir)
 	}
-	ui.Say("Creating container...")
+	ui.Say("Starting container...")
 	if err := s.SudoCommand("lxc-start", "-d", "-n", name); err != nil {
 		errorHandler(fmt.Errorf("Error starting container: %s", err))
 		return multistep.ActionHalt
