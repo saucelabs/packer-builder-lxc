@@ -232,9 +232,7 @@ Change the export tarball name and cherry pick folders you want to export
 				"folders": [
 					{ "src": "/tmp/android-sdk-linux", "dest": "/mytar/android-sdk-linux" },
 					{ "src": "/tmp/.android", "dest": "/mytar/tmp/.android" }
-				],
-				"owner": 2000,
-				"group": 2000
+				]
 			}
     }
   ]
