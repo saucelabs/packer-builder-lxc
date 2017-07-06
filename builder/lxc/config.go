@@ -14,7 +14,7 @@ import (
 type LxcTemplateConfig struct {
 	Name       string
 	Parameters []string
-	EnvVars    []string
+	EnvVars    []string `mapstructure:"environment_vars"`
 }
 
 type RootFsConfig struct {
