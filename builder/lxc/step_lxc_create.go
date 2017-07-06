@@ -82,6 +82,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 				return multistep.ActionHalt
 			}
 		}
+		os.RemoveAll(tmpDir)
 	}
 	ui.Say("Creating container...")
 	if err := s.SudoCommand("lxc-start", "-d", "-n", name); err != nil {
