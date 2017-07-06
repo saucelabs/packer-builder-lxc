@@ -41,11 +41,11 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		// TODO: wait for init to finish before moving on to provisioning instead of this
 		commands[1] = []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")}
 
-		ui.Say("Creating container...")
+		ui.Say("Creating container from template...")
 		for _, command := range commands {
 			log.Printf("Executing sudo command: %#v", command)
 			if err := s.SudoCommand(command...); err != nil {
-				errorHandler(fmt.Errorf("Error creating container: %s", err))
+				errorHandler(fmt.Errorf("Command (%s) failed with error: %s", strings.Join(command, " "), err))
 				return multistep.ActionHalt
 			}
 		}
@@ -53,19 +53,19 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		containerPath := filepath.Join(lxc_dir, name)
 		containerConfig, err := NewLxcConfig(config.RootFs.LxcConfig)
 		if err != nil {
-			errorHandler(fmt.Errorf("Error creating container: %s", err))
+			errorHandler(fmt.Errorf("Could not read lxc config (%s): %s", config.RootFs.LxcConfig, err))
 			return multistep.ActionHalt
 		}
 		containerConfig.SetRootFs(rootfs)
 		tmpDir, err := ioutil.TempDir("", "lxcconfig")
 		if err != nil {
-			errorHandler(fmt.Errorf("Error creating container: %s", err))
+			errorHandler(fmt.Errorf("Could not create temp directory (%s): %s", tmpDir, err))
 			return multistep.ActionHalt
 		}
 		err = containerConfig.Write(filepath.Join(tmpDir, "lxc.config"))
 		if err != nil {
 			os.RemoveAll(tmpDir)
-			errorHandler(fmt.Errorf("Error creating container: %s", err))
+			errorHandler(fmt.Errorf("Could not write lxc config to %s: %s", filepath.Join(tmpDir, "lxc.config"), err))
 			return multistep.ActionHalt
 		}
 
@@ -74,11 +74,11 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		commands[1] = []string{"tar", "-C", containerPath, "-xf", config.RootFs.Archive}
 		commands[2] = []string{"cp", filepath.Join(tmpDir, "lxc.config"), filepath.Join(containerPath, "config")}
 
-		ui.Say("Creating container...")
+		ui.Say(fmt.Sprintf("Creating container from archive...: %s", config.RootFs.Archive))
 		for _, command := range commands {
 			log.Printf("Executing sudo command: %#v", command)
 			if err := s.SudoCommand(command...); err != nil {
-				errorHandler(fmt.Errorf("Error creating container: %s", err))
+				errorHandler(fmt.Errorf("Command (%s) failed with error: %s", strings.Join(command, " "), err))
 				return multistep.ActionHalt
 			}
 		}
