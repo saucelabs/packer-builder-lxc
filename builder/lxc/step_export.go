@@ -84,16 +84,16 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 		"lxc-stop", "--name", name,
 	}
 
+	filename := "rootfs.tar.gz"
+	if config.ExportConfig.Filename != "" {
+		filename = config.ExportConfig.Filename
+	}
 	if len(config.ExportConfig.Folders) == 0 {
 		commands[1] = []string{
-			"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", "rootfs.tar.gz", "./rootfs",
+			"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", filename, "./rootfs",
 		}
 	} else {
-		ui.Say("Preparing container to export...")
-		filename := "rootfs.tar.gz"
-		if config.ExportConfig.Filename != "" {
-			filename = config.ExportConfig.Filename
-		}
+		ui.Say("Preparing folders to export...")
 		outputPath := filepath.Join(config.OutputDir, filename)
 		err, exportFolder := s.PrepareExport(containerDir, config.ExportConfig.Folders)
 		if err != nil {
@@ -105,15 +105,9 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 		command := []string{
 			"tar", "-C", exportFolder, "--anchored", "-czf", outputPath, ".",
 		}
-		if config.ExportConfig.Owner != "" {
-			command = append(command, []string{"--owner", config.ExportConfig.Owner}...)
-		}
-		if config.ExportConfig.Group != "" {
-			command = append(command, []string{"--group", config.ExportConfig.Owner}...)
-		}
 		commands[1] = command
 	}
-	
+
 	commands[2] = []string{
 		"chmod", "+x", configFilePath,
 	}
@@ -137,9 +131,6 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 
 func (s *stepExport) PrepareExport(containerDir string, exportFolders []ExportFolder) (error, string) {
 	containerDir = filepath.Join(containerDir, "rootfs")
-	if len(exportFolders) == 0 {
-		return nil, containerDir
-	}
 	exportFolder := filepath.Join(containerDir, "lxc-export-container-dir")
 	err := s.SudoCommand([]string{ "mkdir", "-p", exportFolder}...)
 	if err != nil {
