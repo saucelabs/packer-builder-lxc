@@ -31,13 +31,13 @@ type Config struct {
 }
 
 type ExportConfig struct {
-	Filename string  `mapstructure:"filename"`
-	Folders          []ExportFolder `mapstructure:"folders"`	
+	Filename string
+	Folders  []ExportFolder `mapstructure:"folders"`
 }
 
 type ExportFolder struct {
-	Src string `mapstructure:"src"`
-	Dest string `mapstructure:"dest"`
+	Src string
+	Dest string
 }
 
 func NewConfig(raws ...interface{}) (*Config, error) {
