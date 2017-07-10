@@ -51,12 +51,12 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		}
 		containerConfig.SetRootFs(rootfs)
 		tmpDir, err := ioutil.TempDir("", "lxcconfig")
-		defer os.RemoveAll(tmpDir)
-
 		if err != nil {
 			errorHandler(fmt.Errorf("Could not create temp directory (%s): %s", tmpDir, err))
 			return multistep.ActionHalt
 		}
+		defer os.RemoveAll(tmpDir)
+
 		err = containerConfig.Write(filepath.Join(tmpDir, "lxc.config"))
 		if err != nil {
 			os.RemoveAll(tmpDir)
