@@ -6,26 +6,26 @@ import (
 	"strings"
 )
 
-type LxcConfig struct {
+type lxcConfig struct {
 	filePath string
 	lines    []string
 }
 
-func NewLxcConfig(path string) (*LxcConfig, error) {
+func NewLxcConfig(path string) (*lxcConfig, error) {
 	input, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
 	lines := strings.Split(string(input), "\n")
-	return &LxcConfig{path, lines}, nil
+	return &lxcConfig{path, lines}, nil
 }
 
-func (c *LxcConfig) SetRootFs(path string) {
-	c.SetProp("lxc.rootfs", path)
+func (c *lxcConfig) SetRootFs(path string) {
+	c.setProp("lxc.rootfs", path)
 }
 
-func (c *LxcConfig) SetProp(key string, value string) {
+func (c *lxcConfig) setProp(key string, value string) {
 	pattern := regexp.MustCompile(`^\s*` + key + `=\s*.*$`)
 	for i, line := range c.lines {
 		if pattern.MatchString(line) {
@@ -36,7 +36,7 @@ func (c *LxcConfig) SetProp(key string, value string) {
 	c.lines = append(c.lines, key+" = "+value)
 }
 
-func (c *LxcConfig) Write(filename string) error {
+func (c *lxcConfig) Write(filename string) error {
 	output := strings.Join(c.lines, "\n")
 	err := ioutil.WriteFile(filename, []byte(output), 0644)
 	return err
