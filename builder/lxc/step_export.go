@@ -28,7 +28,6 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 	name := config.ContainerName
 
 	containerDir := fmt.Sprintf("/var/lib/lxc/%s", name)
-	outputPath := filepath.Join(config.OutputDir, "rootfs.tar.gz")
 	configFilePath := filepath.Join(config.OutputDir, "lxc-config")
 	metadataFilePath := filepath.Join(config.OutputDir, "metadata.json")
 
@@ -84,9 +83,31 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 	commands[0] = []string{
 		"lxc-stop", "--name", name,
 	}
-	commands[1] = []string{
-		"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", outputPath, "./rootfs",
+
+	filename := "rootfs.tar.gz"
+	if config.ExportConfig.Filename != "" {
+		filename = config.ExportConfig.Filename
 	}
+	if len(config.ExportConfig.Folders) == 0 {
+		commands[1] = []string{
+			"tar", "-C", containerDir, "--numeric-owner", "--anchored", "--exclude=./rootfs/dev/log", "-czf", filename, "./rootfs",
+		}
+	} else {
+		ui.Say("Preparing folders to export...")
+		outputPath := filepath.Join(config.OutputDir, filename)
+		err, exportFolder := s.PrepareExport(containerDir, config.ExportConfig.Folders)
+		if err != nil {
+			err := fmt.Errorf("Error creating container export folder: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+		command := []string{
+			"tar", "-C", exportFolder, "--anchored", "-czf", outputPath, ".",
+		}
+		commands[1] = command
+	}
+
 	commands[2] = []string{
 		"chmod", "+x", configFilePath,
 	}
@@ -106,6 +127,31 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 	}
 
 	return multistep.ActionContinue
+}
+
+func (s *stepExport) PrepareExport(containerDir string, exportFolders []ExportFolder) (error, string) {
+	containerDir = filepath.Join(containerDir, "rootfs")
+	exportFolder := filepath.Join(containerDir, "lxc-export-container-dir")
+	err := s.SudoCommand("mkdir", "-p", exportFolder)
+	if err != nil {
+		return nil, exportFolder
+	}
+	for i := 0; i < len(exportFolders); i++ {
+		src := filepath.Join(containerDir, exportFolders[i].Src)
+		dest := filepath.Join(exportFolder, exportFolders[i].Dest)
+		destFolder := filepath.Dir(dest)
+		if destFolder != exportFolder {
+			err := s.SudoCommand("mkdir", "-p", destFolder)
+			if err != nil {
+				return err, exportFolder
+			}
+		}
+		err := s.SudoCommand("mv", src, dest)
+		if err != nil {
+			return err, exportFolder
+		}
+	}
+	return nil, exportFolder
 }
 
 func (s *stepExport) Cleanup(state multistep.StateBag) {}

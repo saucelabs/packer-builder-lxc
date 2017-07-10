@@ -15,6 +15,7 @@ type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
 	ConfigFile          string   `mapstructure:"config_file"`
 	OutputDir           string   `mapstructure:"output_directory"`
+	ExportConfig        ExportConfig  `mapstructure:"export_config"`
 	ContainerName       string   `mapstructure:"container_name"`
 	CommandWrapper      string   `mapstructure:"command_wrapper"`
 	RawInitTimeout      string   `mapstructure:"init_timeout"`
@@ -27,6 +28,16 @@ type Config struct {
 	InitTimeout         time.Duration
 
 	ctx interpolate.Context
+}
+
+type ExportConfig struct {
+	Filename string
+	Folders  []ExportFolder `mapstructure:"folders"`
+}
+
+type ExportFolder struct {
+	Src string
+	Dest string
 }
 
 func NewConfig(raws ...interface{}) (*Config, error) {

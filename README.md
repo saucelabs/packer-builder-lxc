@@ -206,6 +206,40 @@ Creating and cloning a build:
 }
 ```
 
+Export options:
+
+Change the export tarball name and cherry pick folders you want to export
+```json
+{
+  "builders": [
+    {
+      "type": "lxc",
+      "target_runlevel": 2,
+      "container_name": "base",
+      "config_file": "lxc.config",
+      "init_timeout": "120s",
+      "template_parameters": [
+        "-d",
+        "ubuntu",
+        "-r",
+        "trusty",
+        "-a",
+        "amd64"
+      ],
+      "template_name": "ubuntu",
+      "export_config" : {
+				"filename": "androidsdk64.tar.gz",
+				"folders": [
+					{ "src": "/tmp/android-sdk-linux", "dest": "/mytar/android-sdk-linux" },
+					{ "src": "/tmp/.android", "dest": "/mytar/tmp/.android" }
+				]
+			}
+    }
+  ]
+}
+```
+
+
 Vagrant publishing
 ==================
 
