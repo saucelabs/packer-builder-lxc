@@ -33,23 +33,16 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		s.destroy(name, ui)
 	}
 
+	var commands [][]string
 	if config.LxcTemplate.Name != "" {
-		commands := make([][]string, 2)
-		commands[0] = append(config.LxcTemplate.EnvVars, []string{"lxc-create", "-n", name, "-t", config.LxcTemplate.Name, "--"}...)
+		ui.Say("Creating container from template...")
+		commands = append(commands, append(config.LxcTemplate.EnvVars, []string{"lxc-create", "-n", name, "-t", config.LxcTemplate.Name, "--"}...))
 		commands[0] = append(commands[0], config.LxcTemplate.Parameters...)
 		// prevent tmp from being cleaned on boot, we put provisioning scripts there
 		// TODO: wait for init to finish before moving on to provisioning instead of this
-		commands[1] = []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")}
-
-		ui.Say("Creating container from template...")
-		for _, command := range commands {
-			log.Printf("Executing sudo command: %#v", command)
-			if err := s.SudoCommand(command...); err != nil {
-				errorHandler(fmt.Errorf("Command (%s) failed with error: %s", strings.Join(command, " "), err))
-				return multistep.ActionHalt
-			}
-		}
+		commands = append(commands, []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")})
 	} else {
+		ui.Say(fmt.Sprintf("Creating container from archive: %s", config.RootFs.Archive))
 		containerPath := filepath.Join(lxc_dir, name)
 		containerConfig, err := NewLxcConfig(config.RootFs.ConfigFile)
 		if err != nil {
@@ -58,6 +51,8 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		}
 		containerConfig.SetRootFs(rootfs)
 		tmpDir, err := ioutil.TempDir("", "lxcconfig")
+		defer os.RemoveAll(tmpDir)
+
 		if err != nil {
 			errorHandler(fmt.Errorf("Could not create temp directory (%s): %s", tmpDir, err))
 			return multistep.ActionHalt
@@ -69,21 +64,15 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 			return multistep.ActionHalt
 		}
 
-		commands := make([][]string, 3)
-		commands[0] = []string{"mkdir", containerPath}
-		commands[1] = []string{"tar", "-C", containerPath, "-xf", config.RootFs.Archive}
-		commands[2] = []string{"cp", filepath.Join(tmpDir, "lxc.config"), filepath.Join(containerPath, "config")}
-
-		ui.Say(fmt.Sprintf("Creating container from archive: %s", config.RootFs.Archive))
-		for _, command := range commands {
-			log.Printf("Executing sudo command: %#v", command)
-			if err := s.SudoCommand(command...); err != nil {
-				errorHandler(fmt.Errorf("Command (%s) failed with error: %s", strings.Join(command, " "), err))
-				return multistep.ActionHalt
-			}
-		}
-		os.RemoveAll(tmpDir)
+		commands = append(commands, []string{"mkdir", containerPath})
+		commands = append(commands, []string{"tar", "-C", containerPath, "-xf", config.RootFs.Archive})
+		commands = append(commands, []string{"cp", filepath.Join(tmpDir, "lxc.config"), filepath.Join(containerPath, "config")})
 	}
+	if err := s.SudoCommands(commands...); err != nil {
+		errorHandler(err)
+		return multistep.ActionHalt
+	}
+
 	ui.Say("Starting container...")
 	if err := s.SudoCommand("lxc-start", "-d", "-n", name); err != nil {
 		errorHandler(fmt.Errorf("Error starting container: %s", err))
@@ -123,11 +112,21 @@ func (s *stepLxcCreate) SudoCommand(args ...string) error {
 	stderrString := strings.TrimSpace(stderr.String())
 
 	if _, ok := err.(*exec.ExitError); ok {
-		err = fmt.Errorf("Sudo command error: %s", stderrString)
+		err = fmt.Errorf("Sudo command (%s) failed with error: %s", args, stderrString)
 	}
 
 	log.Printf("stdout: %s", stdoutString)
 	log.Printf("stderr: %s", stderrString)
 
 	return err
+}
+
+func (s *stepLxcCreate) SudoCommands(commands ...[]string) error {
+	for _, command := range commands {
+		log.Printf("Executing sudo command: %#v", command)
+		if err := s.SudoCommand(command...); err != nil {
+			return err
+		}
+	}
+	return nil
 }
