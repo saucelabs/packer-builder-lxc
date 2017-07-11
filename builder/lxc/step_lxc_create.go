@@ -16,6 +16,53 @@ import (
 
 type stepLxcCreate struct{}
 
+func (s *stepLxcCreate) createFromTemplate(containerName string, config LxcTemplateConfig) (string, error) {
+	lxcDir := "/var/lib/lxc"
+	rootfs := filepath.Join(lxcDir, containerName, "rootfs")
+
+	commands := make([][]string, 2)
+	commands[0] = append(config.EnvVars, []string{"lxc-create", "-n", containerName, "-t", config.Name, "--"}...)
+	commands[0] = append(commands[0], config.Parameters...)
+	// prevent tmp from being cleaned on boot, we put provisioning scripts there
+	// TODO: wait for init to finish before moving on to provisioning instead of this
+	commands[1] = []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")}
+
+	err := s.SudoCommands(commands...)
+	return rootfs, err
+}
+
+func (s *stepLxcCreate) createFromRootFs(containerName string, config RootFsConfig) (string, error) {
+	lxcDir := "/var/lib/lxc"
+	containerPath := filepath.Join(lxcDir, containerName)
+	rootfs := filepath.Join(containerPath, "rootfs")
+	containerConfig, err := NewLxcConfig(config.ConfigFile)
+	if err != nil {
+		err = fmt.Errorf("Could not read lxc config (%s): %s", config.ConfigFile, err)
+		return "", err
+	}
+	containerConfig.SetRootFs(rootfs)
+	tmpDir, err := ioutil.TempDir("", "lxcconfig")
+	if err != nil {
+		err = fmt.Errorf("Could not create temp directory for lxc config (%s): %s", tmpDir, err)
+		return rootfs, err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	err = containerConfig.Write(filepath.Join(tmpDir, "lxc.config"))
+	if err != nil {
+		err = fmt.Errorf("Could not write lxc config to %s: %s", filepath.Join(tmpDir, "lxc.config"), err)
+		return rootfs, err
+	}
+
+	commands := make([][]string, 3)
+	commands[0] = []string{"mkdir", containerPath}
+	commands[1] = []string{"tar", "-C", containerPath, "-xf", config.Archive}
+	commands[2] = []string{"cp", filepath.Join(tmpDir, "lxc.config"), filepath.Join(containerPath, "config")}
+
+	err = s.SudoCommands(commands...)
+	return rootfs, err
+}
+
 func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
@@ -24,57 +71,25 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		ui.Error(err.Error())
 	}
 
-	// TODO: read from env
-	lxc_dir := "/var/lib/lxc"
-	name := config.ContainerName
-	rootfs := filepath.Join(lxc_dir, name, "rootfs")
-
 	if config.PackerForce {
-		s.destroy(name, ui)
+		s.destroy(config.ContainerName, ui)
 	}
 
-	var commands [][]string
+	var rootfs string
+	var err error
 	if config.LxcTemplate.Name != "" {
 		ui.Say("Creating container from template...")
-		commands = append(commands, append(config.LxcTemplate.EnvVars, []string{"lxc-create", "-n", name, "-t", config.LxcTemplate.Name, "--"}...))
-		commands[0] = append(commands[0], config.LxcTemplate.Parameters...)
-		// prevent tmp from being cleaned on boot, we put provisioning scripts there
-		// TODO: wait for init to finish before moving on to provisioning instead of this
-		commands = append(commands, []string{"touch", filepath.Join(rootfs, "tmp", ".tmpfs")})
+		rootfs, err = s.createFromTemplate(config.ContainerName, config.LxcTemplate)
 	} else {
 		ui.Say(fmt.Sprintf("Creating container from archive: %s", config.RootFs.Archive))
-		containerPath := filepath.Join(lxc_dir, name)
-		containerConfig, err := NewLxcConfig(config.RootFs.ConfigFile)
-		if err != nil {
-			errorHandler(fmt.Errorf("Could not read lxc config (%s): %s", config.RootFs.ConfigFile, err))
-			return multistep.ActionHalt
-		}
-		containerConfig.SetRootFs(rootfs)
-		tmpDir, err := ioutil.TempDir("", "lxcconfig")
-		if err != nil {
-			errorHandler(fmt.Errorf("Could not create temp directory (%s): %s", tmpDir, err))
-			return multistep.ActionHalt
-		}
-		defer os.RemoveAll(tmpDir)
-
-		err = containerConfig.Write(filepath.Join(tmpDir, "lxc.config"))
-		if err != nil {
-			os.RemoveAll(tmpDir)
-			errorHandler(fmt.Errorf("Could not write lxc config to %s: %s", filepath.Join(tmpDir, "lxc.config"), err))
-			return multistep.ActionHalt
-		}
-
-		commands = append(commands, []string{"mkdir", containerPath})
-		commands = append(commands, []string{"tar", "-C", containerPath, "-xf", config.RootFs.Archive})
-		commands = append(commands, []string{"cp", filepath.Join(tmpDir, "lxc.config"), filepath.Join(containerPath, "config")})
+		rootfs, err = s.createFromRootFs(config.ContainerName, config.RootFs)
 	}
-	if err := s.SudoCommands(commands...); err != nil {
+	if err != nil {
 		errorHandler(err)
 		return multistep.ActionHalt
 	}
-
 	ui.Say("Starting container...")
-	if err := s.SudoCommand("lxc-start", "-d", "-n", name); err != nil {
+	if err = s.SudoCommand("lxc-start", "-d", "-n", config.ContainerName); err != nil {
 		errorHandler(fmt.Errorf("Error starting container: %s", err))
 		return multistep.ActionHalt
 	}
