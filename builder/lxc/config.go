@@ -11,20 +11,28 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+type LxcTemplateConfig struct {
+	Name       string
+	Parameters []string
+	EnvVars    []string `mapstructure:"environment_vars"`
+}
+
+type RootFsConfig struct {
+	ConfigFile string `mapstructure:"config"`
+	Archive    string
+}
+
 type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
-	ConfigFile          string   `mapstructure:"config_file"`
-	OutputDir           string   `mapstructure:"output_directory"`
-	ExportConfig        ExportConfig  `mapstructure:"export_config"`
-	ContainerName       string   `mapstructure:"container_name"`
-	CommandWrapper      string   `mapstructure:"command_wrapper"`
-	RawInitTimeout      string   `mapstructure:"init_timeout"`
-	CloneSource         string   `mapstructure:"clone_container"`
-	CleanupFirst        bool     `mapstructure:"cleanup_first"`
-	Name                string   `mapstructure:"template_name"`
-	Parameters          []string `mapstructure:"template_parameters"`
-	EnvVars             []string `mapstructure:"template_environment_vars"`
-	TargetRunlevel      int      `mapstructure:"target_runlevel"`
+	ConfigFile          string            `mapstructure:"config_file"`
+	OutputDir           string            `mapstructure:"output_directory"`
+	ExportConfig        ExportConfig      `mapstructure:"export_config"`
+	ContainerName       string            `mapstructure:"container_name"`
+	CommandWrapper      string            `mapstructure:"command_wrapper"`
+	RawInitTimeout      string            `mapstructure:"init_timeout"`
+	LxcTemplate         LxcTemplateConfig `mapstructure:"lxc_template"`
+	RootFs              RootFsConfig      `mapstructure:"rootfs"`
+	TargetRunlevel      int               `mapstructure:"target_runlevel"`
 	InitTimeout         time.Duration
 
 	ctx interpolate.Context
@@ -36,7 +44,7 @@ type ExportConfig struct {
 }
 
 type ExportFolder struct {
-	Src string
+	Src  string
 	Dest string
 }
 
@@ -74,6 +82,10 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 	c.InitTimeout, err = time.ParseDuration(c.RawInitTimeout)
 	if err != nil {
 		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Failed parsing init_timeout: %s", err))
+	}
+
+	if c.LxcTemplate.Name != "" && c.RootFs != (RootFsConfig{}) {
+		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Cannot build with both lxc_template and rootfs configuration options"))
 	}
 
 	if errs != nil && len(errs.Errors) > 0 {

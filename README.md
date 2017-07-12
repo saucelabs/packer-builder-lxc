@@ -101,7 +101,7 @@ From now you should be able to use `lxc` in packer builders.
 Example packer templates
 ========================
 
-Building wheezy on saucy:
+### Building wheezy on saucy:
 
 ```json
 {
@@ -109,11 +109,13 @@ Building wheezy on saucy:
     {
       "type": "lxc",
       "config_file": "lxc/config",
-      "template_name": "debian",
-      "template_environment_vars": [
-        "MIRROR=http://http.debian.net/debian/",
-        "SUITE=wheezy"
-      ],
+      "lxc_template": {
+        "name": "debian",
+        "environment_vars": [
+          "MIRROR=http://http.debian.net/debian/",
+          "SUITE=wheezy"
+        ]
+      },
       "target_runlevel": 3
     }
   ]
@@ -123,7 +125,7 @@ Building wheezy on saucy:
 The `config_file` is an lxc config file which will be bundled with the machine. You can create your own or just grab the `debian` or `ubuntu` from [vagrant-lxc-base-boxes](https://github.com/fgrehm/vagrant-lxc-base-boxes/tree/master/conf).
 
 
-Building wheezy on wheezy:
+### Building wheezy on wheezy:
 
 ```json
 {
@@ -131,11 +133,13 @@ Building wheezy on wheezy:
     {
       "type": "lxc",
       "config_file": "lxc/config",
-      "template_name": "debian",
-      "template_parameters": ["--arch", "amd64", "--release", "wheezy"],
-      "template_environment_vars": [
-        "MIRROR=http://http.debian.net/debian/"
-      ],
+      "lxc_template": {
+        "name": "debian",
+        "parameters": ["--arch", "amd64", "--release", "wheezy"],
+        "environment_vars": [
+          "MIRROR=http://http.debian.net/debian/"
+        ],
+      },
       "target_runlevel": 3
     }
   ],
@@ -158,13 +162,13 @@ Building wheezy on wheezy:
       "type": "compress",
       "output": "output-vagrant/wheezy64-lxc.box"
     }
-  ],
+  ]
 }
 ```
 
 Note the differences in template parameters/envvars!
 
-Creating and cloning a build:
+### Starting a build from an existing rootfs:
 
 ```json
 {
@@ -175,36 +179,16 @@ Creating and cloning a build:
       "container_name": "base",
       "config_file": "lxc.config",
       "init_timeout": "120s",
-      "template_parameters": [
-        "-d",
-        "ubuntu",
-        "-r",
-        "trusty",
-        "-a",
-        "amd64"
-      ],
-      "template_name": "ubuntu",
-      "cleanup_first": true
+      "rootfs": {
+        "archive": "/path/to/rootfs.tar.gz",
+        "config": "/path/to/lxc.config"
+      }
     }
   ]
 }
 ```
 
-```json
-{
-  "builders": [
-    {
-      "type": "lxc",
-      "target_runlevel": 2,
-      "container_name": "clone",
-      "config_file": "lxc.config",
-      "init_timeout": "360s",
-      "clone_container": "base",
-      "template_name": "none"
-    }
-  ]
-}
-```
+
 
 Export options:
 

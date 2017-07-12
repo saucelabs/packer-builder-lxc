@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/saucelabs/packer-builder-lxc/builder/lxc"
 	"github.com/hashicorp/packer/packer/plugin"
+	"github.com/saucelabs/packer-builder-lxc/builder/lxc"
 )
 
 func main() {
