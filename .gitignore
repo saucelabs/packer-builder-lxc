@@ -21,6 +21,8 @@ _testmain.go
 
 *.exe
 *.test
+*.retry
 .vagrant
 pkg
 .realsync
+.DS_Store
