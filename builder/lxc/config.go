@@ -27,6 +27,7 @@ type Config struct {
 	ConfigFile          string            `mapstructure:"config_file"`
 	OutputDir           string            `mapstructure:"output_directory"`
 	ExportConfig        ExportConfig      `mapstructure:"export_config"`
+	SidediskFolders     []SidediskFolder  `mapstructure:"sidedisks"`
 	ContainerName       string            `mapstructure:"container_name"`
 	CommandWrapper      string            `mapstructure:"command_wrapper"`
 	RawInitTimeout      string            `mapstructure:"init_timeout"`
@@ -41,6 +42,11 @@ type Config struct {
 type ExportConfig struct {
 	Filename string
 	Folders  []ExportFolder `mapstructure:"folders"`
+}
+
+type SidediskFolder struct {
+	Src string
+	Path string
 }
 
 type ExportFolder struct {
