@@ -44,13 +44,13 @@ type ExportConfig struct {
 	Folders  []ExportFolder `mapstructure:"folders"`
 }
 
-type SidediskFolder struct {
-	Src string
-	Path string
-}
-
 type ExportFolder struct {
 	Src  string
+	Dest string
+}
+
+type SidediskFolder struct {
+	Archive string
 	Dest string
 }
 
