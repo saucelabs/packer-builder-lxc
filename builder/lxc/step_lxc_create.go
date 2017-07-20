@@ -61,8 +61,8 @@ func (s *stepLxcCreate) createFromRootFs(containerName string, config RootFsConf
 	return rootfs, err
 }
 
-func (s *stepLxcCreate) loadSidedisk(containerName, archivePath string, destDir string) (error) {
-	destPath := filepath.Join(LxcDir, containerName, "rootfs", destDir)
+func (s *stepLxcCreate) loadSidedisk(rootfs, archivePath string, destDir string) (error) {
+	destPath := filepath.Join(rootfs, destDir)
 
 	commands := make([][]string, 2)
 	commands[0] = []string{"mkdir", "-p", destPath}
@@ -104,7 +104,7 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 
 	for _, sidedisk := range config.SidediskFolders {
 		ui.Say(fmt.Sprintf("Loading sidedisk \"%s\" to %s", sidedisk.Archive, sidedisk.Dest))
-		err = s.loadSidedisk(config.ContainerName, sidedisk.Archive, sidedisk.Dest)
+		err = s.loadSidedisk(rootfs, sidedisk.Archive, sidedisk.Dest)
 		if err != nil {
 			errorHandler(err)
 			return multistep.ActionHalt
