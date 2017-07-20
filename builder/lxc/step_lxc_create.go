@@ -73,7 +73,7 @@ func (s *stepLxcCreate) loadSidedisk(containerName, archivePath string, destDir 
 
 	err := s.SudoCommands(commands...)
 	if err != nil {
-		err = fmt.Errorf("Could not untar sidedisk: %s", err)
+		err = fmt.Errorf("Could not load sidedisk: %s", err)
 		return err
 	}
 	return nil
