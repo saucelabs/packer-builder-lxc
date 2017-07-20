@@ -72,11 +72,11 @@ func (s *stepLxcCreate) loadSidedisk(containerName, archivePath string, destDir 
 	commands[1] = []string{"tar", "-C", destPath, "-xf", archivePath}
 
 	err := s.SudoCommands(commands...)
-  if err != nil {
+	if err != nil {
 		err = fmt.Errorf("Could not untar sidedisk: %s", err)
-    return err
+		return err
 	}
-  return nil
+	return nil
 }
 
 func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
@@ -105,14 +105,14 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		return multistep.ActionHalt
 	}
 
-  for _, sidedisk := range config.SidediskFolders {
-    ui.Say(fmt.Sprintf("Loading sidedisk \"%s\" to %s", sidedisk.Archive, sidedisk.Dest))
-    err = s.loadSidedisk(config.ContainerName, sidedisk.Archive, sidedisk.Dest)
-    if err != nil {
-  		errorHandler(err)
-  		return multistep.ActionHalt
-  	}
-  }
+	for _, sidedisk := range config.SidediskFolders {
+		ui.Say(fmt.Sprintf("Loading sidedisk \"%s\" to %s", sidedisk.Archive, sidedisk.Dest))
+		err = s.loadSidedisk(config.ContainerName, sidedisk.Archive, sidedisk.Dest)
+		if err != nil {
+			errorHandler(err)
+			return multistep.ActionHalt
+		}
+	}
 
 	ui.Say("Starting container...")
 	if err = s.SudoCommand("lxc-start", "-d", "-n", config.ContainerName); err != nil {
