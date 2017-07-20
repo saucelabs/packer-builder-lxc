@@ -17,8 +17,7 @@ import (
 type stepLxcCreate struct{}
 
 func (s *stepLxcCreate) createFromTemplate(containerName string, config LxcTemplateConfig) (string, error) {
-	lxcDir := "/var/lib/lxc"
-	rootfs := filepath.Join(lxcDir, containerName, "rootfs")
+	rootfs := filepath.Join(LxcDir, containerName, "rootfs")
 
 	commands := make([][]string, 2)
 	commands[0] = append(config.EnvVars, []string{"lxc-create", "-n", containerName, "-t", config.Name, "--"}...)
@@ -32,8 +31,7 @@ func (s *stepLxcCreate) createFromTemplate(containerName string, config LxcTempl
 }
 
 func (s *stepLxcCreate) createFromRootFs(containerName string, config RootFsConfig) (string, error) {
-	lxcDir := "/var/lib/lxc"
-	containerPath := filepath.Join(lxcDir, containerName)
+	containerPath := filepath.Join(LxcDir, containerName)
 	rootfs := filepath.Join(containerPath, "rootfs")
 	containerConfig, err := NewLxcConfig(config.ConfigFile)
 	if err != nil {
@@ -64,8 +62,7 @@ func (s *stepLxcCreate) createFromRootFs(containerName string, config RootFsConf
 }
 
 func (s *stepLxcCreate) loadSidedisk(containerName, archivePath string, destDir string) (error) {
-	lxcDir := "/var/lib/lxc"
-	destPath := filepath.Join(lxcDir, containerName, "rootfs", destDir)
+	destPath := filepath.Join(LxcDir, containerName, "rootfs", destDir)
 
 	commands := make([][]string, 2)
 	commands[0] = []string{"mkdir", "-p", destPath}

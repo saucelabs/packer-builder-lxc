@@ -11,6 +11,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const LxcDir string = "/var/lib/lxc"
+
 type LxcTemplateConfig struct {
 	Name       string
 	Parameters []string

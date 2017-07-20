@@ -27,7 +27,7 @@ func (s *stepExport) Run(state multistep.StateBag) multistep.StepAction {
 
 	name := config.ContainerName
 
-	containerDir := fmt.Sprintf("/var/lib/lxc/%s", name)
+	containerDir := filepath.Join(LxcDir, name)
 	configFilePath := filepath.Join(config.OutputDir, "lxc-config")
 	metadataFilePath := filepath.Join(config.OutputDir, "metadata.json")
 
