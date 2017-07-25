@@ -11,6 +11,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const LxcDir string = "/var/lib/lxc"
+
 type LxcTemplateConfig struct {
 	Name       string
 	Parameters []string
@@ -27,6 +29,7 @@ type Config struct {
 	ConfigFile          string            `mapstructure:"config_file"`
 	OutputDir           string            `mapstructure:"output_directory"`
 	ExportConfig        ExportConfig      `mapstructure:"export_config"`
+	SidediskFolders     []SidediskFolder  `mapstructure:"sidedisks"`
 	ContainerName       string            `mapstructure:"container_name"`
 	CommandWrapper      string            `mapstructure:"command_wrapper"`
 	RawInitTimeout      string            `mapstructure:"init_timeout"`
@@ -45,6 +48,11 @@ type ExportConfig struct {
 
 type ExportFolder struct {
 	Src  string
+	Dest string
+}
+
+type SidediskFolder struct {
+	Archive string
 	Dest string
 }
 

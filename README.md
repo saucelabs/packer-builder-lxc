@@ -202,15 +202,17 @@ Change the export tarball name and cherry pick folders you want to export
       "container_name": "base",
       "config_file": "lxc.config",
       "init_timeout": "120s",
-      "template_parameters": [
-        "-d",
-        "ubuntu",
-        "-r",
-        "trusty",
-        "-a",
-        "amd64"
-      ],
-      "template_name": "ubuntu",
+      "lxc_template": {
+        "name": "ubuntu",
+        "parameters": [
+          "-d",
+          "ubuntu",
+          "-r",
+          "trusty",
+          "-a",
+          "amd64"
+        ]
+      },
       "export_config" : {
         "filename": "androidsdk64.tar.gz",
         "folders": [
@@ -223,6 +225,39 @@ Change the export tarball name and cherry pick folders you want to export
 }
 ```
 
+### Sidedisk :
+
+Put host's tarball path in sidedisks, and it will be unarchived on running container
+```json
+{
+  "builders": [
+    {
+      "type": "lxc",
+      "target_runlevel": 2,
+      "container_name": "base",
+      "config_file": "lxc.config",
+      "init_timeout": "120s",
+      "lxc_template": {
+        "name": "ubuntu",
+        "parameters": [
+          "-d",
+          "ubuntu",
+          "-r",
+          "trusty",
+          "-a",
+          "amd64"
+        ]
+      },
+      "sidedisks": [
+        {
+          "archive": "/home/host_user/sdk.tar.gz",
+          "dest": "/mnt/android/sdk"
+        }
+      ]
+    }
+  ]
+}
+```
 
 Vagrant publishing
 ==================

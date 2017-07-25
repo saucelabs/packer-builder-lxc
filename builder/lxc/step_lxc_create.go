@@ -17,8 +17,7 @@ import (
 type stepLxcCreate struct{}
 
 func (s *stepLxcCreate) createFromTemplate(containerName string, config LxcTemplateConfig) (string, error) {
-	lxcDir := "/var/lib/lxc"
-	rootfs := filepath.Join(lxcDir, containerName, "rootfs")
+	rootfs := filepath.Join(LxcDir, containerName, "rootfs")
 
 	commands := make([][]string, 2)
 	commands[0] = append(config.EnvVars, []string{"lxc-create", "-n", containerName, "-t", config.Name, "--"}...)
@@ -32,8 +31,7 @@ func (s *stepLxcCreate) createFromTemplate(containerName string, config LxcTempl
 }
 
 func (s *stepLxcCreate) createFromRootFs(containerName string, config RootFsConfig) (string, error) {
-	lxcDir := "/var/lib/lxc"
-	containerPath := filepath.Join(lxcDir, containerName)
+	containerPath := filepath.Join(LxcDir, containerName)
 	rootfs := filepath.Join(containerPath, "rootfs")
 	containerConfig, err := NewLxcConfig(config.ConfigFile)
 	if err != nil {
@@ -63,6 +61,21 @@ func (s *stepLxcCreate) createFromRootFs(containerName string, config RootFsConf
 	return rootfs, err
 }
 
+func (s *stepLxcCreate) loadSidedisk(rootfs, archivePath string, destDir string) (error) {
+	destPath := filepath.Join(rootfs, destDir)
+
+	commands := make([][]string, 2)
+	commands[0] = []string{"mkdir", "-p", destPath}
+	commands[1] = []string{"tar", "-C", destPath, "-xf", archivePath}
+
+	err := s.SudoCommands(commands...)
+	if err != nil {
+		err = fmt.Errorf("Could not load sidedisk: %s", err)
+		return err
+	}
+	return nil
+}
+
 func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
@@ -88,6 +101,16 @@ func (s *stepLxcCreate) Run(state multistep.StateBag) multistep.StepAction {
 		errorHandler(err)
 		return multistep.ActionHalt
 	}
+
+	for _, sidedisk := range config.SidediskFolders {
+		ui.Say(fmt.Sprintf("Loading sidedisk \"%s\" to %s", sidedisk.Archive, sidedisk.Dest))
+		err = s.loadSidedisk(rootfs, sidedisk.Archive, sidedisk.Dest)
+		if err != nil {
+			errorHandler(err)
+			return multistep.ActionHalt
+		}
+	}
+
 	ui.Say("Starting container...")
 	if err = s.SudoCommand("lxc-start", "-d", "-n", config.ContainerName); err != nil {
 		errorHandler(fmt.Errorf("Error starting container: %s", err))
